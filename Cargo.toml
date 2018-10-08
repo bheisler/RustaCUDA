@@ -1,0 +1,7 @@
+[package]
+name = "cuda-rs"
+version = "0.1.0"
+authors = ["Brook Heisler <redattack34@gmail.com>"]
+
+[dependencies]
+cuda-sys = "0.2"
