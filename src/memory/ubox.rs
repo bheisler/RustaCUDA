@@ -82,10 +82,10 @@ impl<T: DeviceCopy> UBox<T> {
 impl<T: DeviceCopy> Drop for UBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            // No choice but to panic if this fails. It will probably abort the process as well, but
-            // it can only happen if the user calls from_raw with an invalid pointer.
+            // No choice but to panic if this fails.
             unsafe {
-                cudaFree(self.ptr as *mut c_void).toResult().unwrap();
+                cudaFree(self.ptr as *mut c_void).toResult()
+                    .expect("Failed to deallocate CUDA memory.");
             }
         }
         self.ptr = ptr::null_mut();

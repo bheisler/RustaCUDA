@@ -8,6 +8,7 @@ use cuda_sys::cudart::cudaError_t as cudaRtError_t;
 pub enum CudaError {
     CudaError(cudaError_t),
     CudaRtError(cudaRtError_t),
+    InvalidMemoryAllocation,
     __Nonexhaustive
 }
 

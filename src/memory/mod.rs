@@ -1,6 +1,8 @@
 mod ubox;
+mod locked_buf;
 
 pub use self::ubox::UBox;
+pub use self::locked_buf::LockedBuffer;
 
 use std::num::*;
 use std::marker::PhantomData;
