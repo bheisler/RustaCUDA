@@ -8,15 +8,16 @@ use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{self, Display, Pointer};
 use std::ops::{Deref, DerefMut};
 use std::hash::{Hash, Hasher};
+use super::DeviceCopy;
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
 /// that the allocated memory can be seamlessly shared between host and device.
 #[derive(Eq, Ord, Clone, Debug, PartialEq, PartialOrd)]
-pub struct UBox<T> {
+pub struct UBox<T: DeviceCopy> {
     ptr: *mut T,
 }
-impl<T> UBox<T> {
+impl<T: DeviceCopy> UBox<T> {
     /// Allocate unified memory and place val into it. 
     pub fn new(val: T) -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
@@ -78,11 +79,9 @@ impl<T> UBox<T> {
         unsafe { &mut *UBox::into_raw(b) }
     }
 }
-impl<T> Drop for UBox<T> {
+impl<T: DeviceCopy> Drop for UBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            drop(&**self);
-
             // No choice but to panic if this fails. It will probably abort the process as well, but
             // it can only happen if the user calls from_raw with an invalid pointer.
             unsafe {
@@ -93,27 +92,27 @@ impl<T> Drop for UBox<T> {
     }
 }
 
-impl<T> Borrow<T> for UBox<T> {
+impl<T: DeviceCopy> Borrow<T> for UBox<T> {
     fn borrow(&self) -> &T {
         &**self
     }
 }
-impl<T> BorrowMut<T> for UBox<T> {
+impl<T: DeviceCopy> BorrowMut<T> for UBox<T> {
     fn borrow_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
-impl<T> AsRef<T> for UBox<T> {
+impl<T: DeviceCopy> AsRef<T> for UBox<T> {
     fn as_ref(& self) -> &T {
         &**self
     }
 }
-impl<T> AsMut<T> for UBox<T> {
+impl<T: DeviceCopy> AsMut<T> for UBox<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut **self
     }
 }
-impl <T> Deref for UBox<T> {
+impl <T: DeviceCopy> Deref for UBox<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -122,24 +121,24 @@ impl <T> Deref for UBox<T> {
         }
     }
 }
-impl <T> DerefMut for UBox<T> {
+impl <T: DeviceCopy> DerefMut for UBox<T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe {
             &mut *self.ptr
         }
     }
 }
-impl<T: Hash> Hash for UBox<T> {
+impl<T: Hash + DeviceCopy> Hash for UBox<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         (**self).hash(state);
     }
 }
-impl<T: Display> Display for UBox<T> {
+impl<T: Display + DeviceCopy> Display for UBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&**self, f)
     }
 }
-impl<T> Pointer for UBox<T> {
+impl<T: DeviceCopy> Pointer for UBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
