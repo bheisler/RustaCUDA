@@ -17,12 +17,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     }
 
     /// Unwrap the contained pointer. 
-    pub fn unwrap(self) -> *const T {
-        self.0
-    }
-
-    /// Unwrap the contained pointer into a mutable raw pointer
-    pub fn unwrap_mut(self) -> *mut T {
+    pub fn unwrap(self) -> *mut T {
         self.0
     }
 
@@ -75,6 +70,11 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
         ::std::fmt::Pointer::fmt(&self.0, f)
     }
 }
+impl<T: DeviceCopy> ::std::convert::From<UnifiedPointer<T>> for DevicePointer<T> {
+    fn from(ptr: UnifiedPointer<T>) -> DevicePointer<T> {
+        DevicePointer::wrap( ptr.unwrap() )
+    }
+}
 
 /// A struct representing a pointer to unified memory.
 /// 
@@ -82,7 +82,7 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
 /// shared between the CPU and the GPU. It can also be safely copied to the device (eg. as part of
 /// a kernel launch).
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct UnifiedPointer<T: DeviceCopy>(*mut T);
 unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 impl<T: DeviceCopy> UnifiedPointer<T> {
@@ -93,12 +93,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     }
 
     /// Unwrap the contained pointer. 
-    pub fn unwrap(self) -> *const T {
-        self.0
-    }
-
-    /// Unwrap the contained pointer into a mutable raw pointer
-    pub fn unwrap_mut(self) -> *mut T {
+    pub fn unwrap(self) -> *mut T {
         self.0
     }
 }

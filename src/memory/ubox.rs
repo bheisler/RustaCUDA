@@ -1,35 +1,33 @@
 use error::*;
-use cuda_sys::cudart::*;
 use std::mem;
 use std::ptr;
-use std::os::raw::c_void;
 use std::convert::{AsMut, AsRef};
 use std::borrow::{Borrow, BorrowMut};
 use std::fmt::{self, Display, Pointer};
 use std::ops::{Deref, DerefMut};
 use std::hash::{Hash, Hasher};
 use super::DeviceCopy;
+use memory::UnifiedPointer;
+use memory::{cuda_malloc_unified, cuda_free};
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
 /// that the allocated memory can be seamlessly shared between host and device.
 #[derive(Eq, Ord, Clone, Debug, PartialEq, PartialOrd)]
 pub struct UBox<T: DeviceCopy> {
-    ptr: *mut T,
+    ptr: UnifiedPointer<T>,
 }
 impl<T: DeviceCopy> UBox<T> {
     /// Allocate unified memory and place val into it. 
     pub fn new(val: T) -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
-            Ok(UBox{ ptr: ptr::null_mut() })
+            Ok(UBox{ ptr: UnifiedPointer::wrap( ptr::null_mut() ) })
         }
         else {
-            let mut ptr: *mut c_void = ptr::null_mut();
             unsafe {
-                cudaMallocManaged(&mut ptr as *mut *mut c_void, mem::size_of::<T>(), cudaMemAttachGlobal).toResult()?;
-                let ptr = ptr as *mut T;
-                *ptr = val;
-                Ok(UBox{ ptr : ptr as *mut T })
+                let mut ptr = cuda_malloc_unified(1)?;
+                **ptr = val;
+                Ok(UBox{ ptr })
             }
         }
     }
@@ -45,7 +43,7 @@ impl<T: DeviceCopy> UBox<T> {
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
     pub unsafe fn from_raw(ptr: *mut T) -> Self {
-        UBox{ ptr }
+        UBox{ ptr: UnifiedPointer::wrap( ptr ) }
     }
 
     /// Consumes the UBox, returning the wrapped unified-memory pointer.
@@ -58,7 +56,7 @@ impl<T: DeviceCopy> UBox<T> {
     /// `UBox::into_raw(b)` instead of `b.into_raw()` This is so that there is no conflict with
     /// a method on the inner type.
     pub fn into_raw(b: UBox<T>) -> *mut T {
-        b.ptr
+        *b.ptr
     }
 
     /// Consumes and leaks the UBox, returning a mutable reference, &'a mut T. Note that the type T
@@ -82,13 +80,12 @@ impl<T: DeviceCopy> UBox<T> {
 impl<T: DeviceCopy> Drop for UBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
+            let ptr = ::std::mem::replace(&mut self.ptr, UnifiedPointer::wrap( ptr::null_mut() ));
             // No choice but to panic if this fails.
             unsafe {
-                cudaFree(self.ptr as *mut c_void).toResult()
-                    .expect("Failed to deallocate CUDA memory.");
+                cuda_free(ptr).expect("Failed to deallocate CUDA memory.");
             }
         }
-        self.ptr = ptr::null_mut();
     }
 }
 
@@ -117,14 +114,14 @@ impl <T: DeviceCopy> Deref for UBox<T> {
 
     fn deref(&self) -> &T {
         unsafe {
-            &*self.ptr
+            &**self.ptr
         }
     }
 }
 impl <T: DeviceCopy> DerefMut for UBox<T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe {
-            &mut *self.ptr
+            &mut **self.ptr
         }
     }
 }
