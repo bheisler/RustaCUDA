@@ -1,8 +1,11 @@
 mod ubox;
 mod locked_buf;
+mod pointer;
 
 pub use self::ubox::UBox;
 pub use self::locked_buf::LockedBuffer;
+pub use self::pointer::DevicePointer;
+pub use self::pointer::UnifiedPointer;
 
 use std::num::*;
 use std::marker::PhantomData;
