@@ -26,7 +26,7 @@ impl<T: DeviceCopy> UBox<T> {
         } else {
             unsafe {
                 let mut ptr = cuda_malloc_unified(1)?;
-                **ptr = val;
+                *ptr.as_raw_mut() = val;
                 Ok(UBox { ptr })
             }
         }
@@ -37,7 +37,7 @@ impl<T: DeviceCopy> UBox<T> {
     /// After calling this function, the raw pointer and the memory it points to is owned by the
     /// UBox. The UBox destructor will call the destructor of T and free the allocated memory.
     /// This function may accept any pointer produced by the `cudaMallocManaged` CUDA API call,
-    /// such as one taken from `UBox::into_raw`.
+    /// such as one taken from `UBox::as_raw`.
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
@@ -55,11 +55,11 @@ impl<T: DeviceCopy> UBox<T> {
     /// The easiest way to do so is to create a new UBox using the UBox::from_raw function.
     ///
     /// Note: This is an associated function, which means that you have to all it as
-    /// `UBox::into_raw(b)` instead of `b.into_raw()` This is so that there is no conflict with
+    /// `UBox::as_raw(b)` instead of `b.as_raw()` This is so that there is no conflict with
     /// a method on the inner type.
     #[allow(wrong_self_convention)]
-    pub fn into_raw(b: UBox<T>) -> *mut T {
-        let ptr = *b.ptr;
+    pub fn into_raw(mut b: UBox<T>) -> *mut T {
+        let ptr = b.ptr.as_raw_mut();
         mem::forget(b);
         ptr
     }
@@ -119,12 +119,12 @@ impl<T: DeviceCopy> Deref for UBox<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        unsafe { &**self.ptr }
+        unsafe { &*self.ptr.as_raw() }
     }
 }
 impl<T: DeviceCopy> DerefMut for UBox<T> {
     fn deref_mut(&mut self) -> &mut T {
-        unsafe { &mut **self.ptr }
+        unsafe { &mut *self.ptr.as_raw_mut() }
     }
 }
 impl<T: Display + DeviceCopy> Display for UBox<T> {

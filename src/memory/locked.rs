@@ -1,9 +1,8 @@
 use super::DeviceCopy;
-use cuda_sys::cudart::*;
 use error::*;
+use memory::{cuda_free_locked, cuda_malloc_locked};
 use std::mem;
 use std::ops;
-use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 
@@ -67,11 +66,11 @@ impl<T: DeviceCopy> LockedBuffer<T> {
             .checked_mul(mem::size_of::<T>())
             .ok_or(CudaError::InvalidMemoryAllocation)?;
 
-        let mut ptr: *mut c_void = ptr::NonNull::dangling().as_ptr();
-        if bytes > 0 {
-            cudaMallocHost(&mut ptr as *mut *mut c_void, bytes).toResult()?;
-        }
-        let ptr = ptr as *mut T;
+        let ptr: *mut T = if bytes > 0 {
+            cuda_malloc_locked(bytes)?
+        } else {
+            ptr::NonNull::dangling().as_ptr()
+        };
         Ok(LockedBuffer {
             buf: ptr as *mut T,
             capacity: size,
@@ -165,9 +164,7 @@ impl<T: DeviceCopy> Drop for LockedBuffer<T> {
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
             unsafe {
-                cudaFreeHost(self.buf as *mut c_void)
-                    .toResult()
-                    .expect("Failed to deallocate CUDA page-locked memory.");
+                cuda_free_locked(self.buf).expect("Failed to deallocate CUDA page-locked memory.");
             }
         }
         self.capacity = 0;

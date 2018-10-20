@@ -17,7 +17,12 @@ impl<T: DeviceCopy> DevicePointer<T> {
     }
 
     /// Unwrap the contained pointer.
-    pub fn into_raw(self) -> *mut T {
+    pub fn as_raw(&self) -> *const T {
+        self.0
+    }
+
+    /// Unwrap the contained pointer as a mutable raw pointer.
+    pub fn as_raw_mut(&mut self) -> *mut T {
         self.0
     }
 
@@ -73,8 +78,8 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
     }
 }
 impl<T: DeviceCopy> ::std::convert::From<UnifiedPointer<T>> for DevicePointer<T> {
-    fn from(ptr: UnifiedPointer<T>) -> DevicePointer<T> {
-        DevicePointer::wrap(ptr.into_raw())
+    fn from(mut ptr: UnifiedPointer<T>) -> DevicePointer<T> {
+        DevicePointer::wrap(ptr.as_raw_mut())
     }
 }
 
@@ -88,31 +93,70 @@ impl<T: DeviceCopy> ::std::convert::From<UnifiedPointer<T>> for DevicePointer<T>
 pub struct UnifiedPointer<T: DeviceCopy>(*mut T);
 unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 impl<T: DeviceCopy> UnifiedPointer<T> {
-    /// Wrap the given raw pointer in a DevicePointer. The given pointer is assumed to be a valid,
+    /// Wrap the given raw pointer in a UnifiedPointer. The given pointer is assumed to be a valid,
     /// device pointer or null.
     pub fn wrap(ptr: *mut T) -> UnifiedPointer<T> {
         UnifiedPointer(ptr)
     }
 
     /// Unwrap the contained pointer.
-    pub fn into_raw(self) -> *mut T {
+    pub fn as_raw(&self) -> *const T {
         self.0
+    }
+
+    /// Unwrap the contained pointer as a mutable raw pointer.
+    pub fn as_raw_mut(&mut self) -> *mut T {
+        self.0
+    }
+
+    /// Returns true if the pointer is null.
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
+
+    /// Calculates the offset from a device pointer.
+    ///
+    /// `count` is in units of T; eg. a `count` of 3 represents a pointer offset of
+    /// `3 * size_of::<T>()` bytes.
+    pub unsafe fn offset(self, count: isize) -> UnifiedPointer<T> {
+        Self::wrap(self.0.offset(count))
+    }
+
+    /// Calculates the offset from a pointer using wrapping arithmetic.
+    ///
+    /// `count` is in units of T; eg. a `count` of 3 represents a pointer offset of
+    /// `3 * size_of::<T>()` bytes.
+    pub unsafe fn wrapping_offset(self, count: isize) -> UnifiedPointer<T> {
+        Self::wrap(self.0.wrapping_offset(count))
+    }
+
+    /// Calculates the offset from a pointer (convenience for `.offset(count as isize)`).
+    ///
+    /// `count` is in units of T; e.g. a `count` of 3 represents a pointer
+    /// offset of `3 * size_of::<T>()` bytes.
+    #[allow(should_implement_trait)]
+    pub unsafe fn add(self, count: usize) -> Self
+    where
+        T: Sized,
+    {
+        self.offset(count as isize)
+    }
+
+    /// Calculates the offset from a pointer (convenience for
+    /// `.offset((count as isize).wrapping_neg())`).
+    ///
+    /// `count` is in units of T; e.g. a `count` of 3 represents a pointer
+    /// offset of `3 * size_of::<T>()` bytes.
+    #[allow(should_implement_trait)]
+    pub unsafe fn sub(self, count: usize) -> Self
+    where
+        T: Sized,
+    {
+        self.offset((count as isize).wrapping_neg())
     }
 }
 impl<T: DeviceCopy> ::std::fmt::Pointer for UnifiedPointer<T> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         ::std::fmt::Pointer::fmt(&self.0, f)
-    }
-}
-impl<T: DeviceCopy> ::std::ops::Deref for UnifiedPointer<T> {
-    type Target = *mut T;
-
-    fn deref(&self) -> &*mut T {
-        &self.0
-    }
-}
-impl<T: DeviceCopy> ::std::ops::DerefMut for UnifiedPointer<T> {
-    fn deref_mut(&mut self) -> &mut *mut T {
-        &mut self.0
     }
 }

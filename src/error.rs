@@ -4,7 +4,8 @@ use std::result::Result;
 
 // TODO: Implement debug properly
 // TODO: implement display
-#[derive(Clone, Copy, Debug)]
+// TODO: Wrapping cuda-sys errors makes it hard to match on errors. Is that a problem?
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CudaError {
     CudaError(cudaError_t),
     CudaRtError(cudaRtError_t),
