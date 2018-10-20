@@ -51,7 +51,7 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 
 /// Free memory allocated with cuda_malloc or cuda_malloc_unified.
 pub unsafe fn cuda_free<T: DeviceCopy, P: Into<DevicePointer<T>>>(p: P) -> CudaResult<()> {
-    let ptr = p.into().unwrap();
+    let ptr = p.into().into_raw();
     cudaFree_raw(ptr as *mut c_void).toResult()?;
     Ok(())
 }

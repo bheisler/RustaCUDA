@@ -5,7 +5,6 @@ use memory::{cuda_free, cuda_malloc_unified};
 use std::borrow::{Borrow, BorrowMut};
 use std::convert::{AsMut, AsRef};
 use std::fmt::{self, Display, Pointer};
-use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
@@ -13,7 +12,7 @@ use std::ptr;
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
 /// that the allocated memory can be seamlessly shared between host and device.
-#[derive(Eq, Ord, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Eq, Ord, Clone, Debug, PartialEq, PartialOrd, Hash)]
 pub struct UBox<T: DeviceCopy> {
     ptr: UnifiedPointer<T>,
 }
@@ -58,8 +57,11 @@ impl<T: DeviceCopy> UBox<T> {
     /// Note: This is an associated function, which means that you have to all it as
     /// `UBox::into_raw(b)` instead of `b.into_raw()` This is so that there is no conflict with
     /// a method on the inner type.
+    #[allow(wrong_self_convention)]
     pub fn into_raw(b: UBox<T>) -> *mut T {
-        *b.ptr
+        let ptr = *b.ptr;
+        mem::forget(b);
+        ptr
     }
 
     /// Consumes and leaks the UBox, returning a mutable reference, &'a mut T. Note that the type T
@@ -123,11 +125,6 @@ impl<T: DeviceCopy> Deref for UBox<T> {
 impl<T: DeviceCopy> DerefMut for UBox<T> {
     fn deref_mut(&mut self) -> &mut T {
         unsafe { &mut **self.ptr }
-    }
-}
-impl<T: Hash + DeviceCopy> Hash for UBox<T> {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        (**self).hash(state);
     }
 }
 impl<T: Display + DeviceCopy> Display for UBox<T> {

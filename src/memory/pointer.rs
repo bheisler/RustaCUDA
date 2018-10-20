@@ -17,12 +17,12 @@ impl<T: DeviceCopy> DevicePointer<T> {
     }
 
     /// Unwrap the contained pointer.
-    pub fn unwrap(self) -> *mut T {
+    pub fn into_raw(self) -> *mut T {
         self.0
     }
 
     /// Returns true if the pointer is null.
-    pub fn is_null(self) -> bool {
+    pub fn is_null(&self) -> bool {
         self.0.is_null()
     }
 
@@ -46,7 +46,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     ///
     /// `count` is in units of T; e.g. a `count` of 3 represents a pointer
     /// offset of `3 * size_of::<T>()` bytes.
-    #[inline]
+    #[allow(should_implement_trait)]
     pub unsafe fn add(self, count: usize) -> Self
     where
         T: Sized,
@@ -59,7 +59,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     ///
     /// `count` is in units of T; e.g. a `count` of 3 represents a pointer
     /// offset of `3 * size_of::<T>()` bytes.
-    #[inline]
+    #[allow(should_implement_trait)]
     pub unsafe fn sub(self, count: usize) -> Self
     where
         T: Sized,
@@ -74,7 +74,7 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
 }
 impl<T: DeviceCopy> ::std::convert::From<UnifiedPointer<T>> for DevicePointer<T> {
     fn from(ptr: UnifiedPointer<T>) -> DevicePointer<T> {
-        DevicePointer::wrap(ptr.unwrap())
+        DevicePointer::wrap(ptr.into_raw())
     }
 }
 
@@ -95,7 +95,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     }
 
     /// Unwrap the contained pointer.
-    pub fn unwrap(self) -> *mut T {
+    pub fn into_raw(self) -> *mut T {
         self.0
     }
 }

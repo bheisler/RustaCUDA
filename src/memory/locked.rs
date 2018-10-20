@@ -38,7 +38,7 @@ pub struct LockedBuffer<T: DeviceCopy> {
 }
 impl<T: DeviceCopy> LockedBuffer<T> {
     /// Create a new LockedBuffer of length `size` filled with clones of `value`.
-    pub fn new(value: T, size: usize) -> CudaResult<Self> {
+    pub fn new(value: &T, size: usize) -> CudaResult<Self> {
         unsafe {
             let mut uninit = LockedBuffer::uninitialized(size)?;
             for x in 0..size {
