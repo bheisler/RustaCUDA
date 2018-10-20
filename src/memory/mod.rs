@@ -1,3 +1,51 @@
+//! Access to CUDA's memory allocation and transfer functions.
+//!
+//! The memory module provides a safe wrapper around CUDA's memory allocation and transfer functions.
+//! This includes access to device memory, unified memory, and page-locked host memory.
+//!
+//! # Device Memory
+//!
+//! Device memory is just what it sounds like - memory allocated on the device. Device memory
+//! cannot be accessed from the host directly, but data can be copied to and from the device.
+//! RustaCUDA exposes device memory through the [`DeviceBox`](struct.Devicebox.html) and
+//! [`DeviceBuffer`](struct.DeviceBuffer.html) structures, and pointers to device memory are
+//! represented by [`DevicePointer`](struct.DevicePointer.html).
+//!
+//! # Unified Memory
+//!
+//! Unified memory is a memory allocation which can be read from and written to by both the host
+//! and the device. When the host (or device) attempts to access a page of unified memory, it is
+//! seamlessly transferred from CPU RAM to GPU RAM or vice versa. The programmer may also choose to
+//! explicitly prefetch data to one side or another. RustaCUDA exposes unified memory through the
+//! [`UBox`](struct.UBox.html) and [`UBuffer`](struct.UBuffer.html) structures, and pointers to
+//! unified memory are represented by [`UnifiedPointer`](struct.UnifiedPointer.html).
+//!
+//! Unified memory is generally easier to use than device memory, but there are drawbacks. It is
+//! possible to allocate more memory than is available on the card, and this can result in very slow
+//! paging behavior. Additionally, it can require careful use of prefetching to achieve optimum
+//! performance. Nevertheless, unified memory is recommended and should be considered the default
+//! choice.
+//!
+//! # Page-locked Host Memory
+//!
+//! Page-locked memory is memory that the operating system has locked into physical RAM, and will
+//! not page out to disk. When copying data from the process' memory space to the device, the CUDA
+//! driver needs to first copy the data to a page-locked region of host memory, then initiate a DMA
+//! transfer to copy the data to the device itself. Likewise, when transferring from device to host,
+//! the driver copies the data into page-locked host memory then into the normal memory space. This
+//! extra copy can be eliminated if the data is loaded or generated directly into page-locked
+//! memory. RustaCUDA exposes page-locked memory through the
+//! [`LockedBuffer`](struct.LockedBuffer.html) struct.
+//!
+//! For example, if the programmer needs to read an array of bytes from disk and transfer it to the
+//! device, it would be best to create a `LockedBuffer`, load the bytes directly into the
+//! `LockedBuffer`, and then copy them to a `DeviceBuffer`. If the bytes are in a `Vec<u8>`, there
+//! would be no advantage to using a `LockedBuffer`.
+//!
+//! However, since the OS cannot page out page-locked memory, excessive use can slow down the entire
+//! system (including other processes) as physical RAM is tied up.  Therefore, page-locked memory
+//! should be used sparingly.
+
 mod locked;
 mod malloc;
 mod pointer;
@@ -98,16 +146,13 @@ unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
     for (A, B, C, D)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
     for (A, B, C, D, E)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
     DeviceCopy for (A, B, C, D, E, F)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -117,8 +162,7 @@ unsafe impl<
         F: DeviceCopy,
         G: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -129,5 +173,4 @@ unsafe impl<
         G: DeviceCopy,
         H: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G, H)
-{
-}
+{}

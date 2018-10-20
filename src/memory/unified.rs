@@ -8,6 +8,11 @@ use std::fmt::{self, Display, Pointer};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
+/*
+You should be able to:
+- Prefetch unified data to/from the device
+*/
+
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
 /// that the allocated memory can be seamlessly shared between host and device.
