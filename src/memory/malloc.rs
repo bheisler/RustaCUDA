@@ -6,6 +6,7 @@ use cuda_sys::cudart::{
 use error::*;
 use memory::DevicePointer;
 use memory::UnifiedPointer;
+use private::CudaFreeable;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
@@ -33,7 +34,7 @@ use std::ptr;
 /// # Examples
 ///
 /// ```
-/// # use rustacuda::memory::*;
+/// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for 5 u64s
 ///     let device_buffer = cuda_malloc::<u64>(5).unwrap();
@@ -75,7 +76,7 @@ pub unsafe fn cuda_malloc<T: DeviceCopy>(count: usize) -> CudaResult<DevicePoint
 /// # Examples
 ///
 /// ```
-/// # use rustacuda::memory::*;
+/// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for a u64
 ///     let mut unified_buffer = cuda_malloc_unified::<u64>(1).unwrap();
@@ -111,15 +112,15 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 /// # Examples
 ///
 /// ```
-/// # use rustacuda::memory::*;
+/// use rustacuda::memory::*;
 /// unsafe {
 ///     let device_buffer = cuda_malloc::<u64>(5).unwrap();
 ///     // Free allocated memory.
 ///     cuda_free(device_buffer).unwrap();
 /// }
 /// ```
-pub unsafe fn cuda_free<T: DeviceCopy, P: Into<DevicePointer<T>>>(p: P) -> CudaResult<()> {
-    let ptr = p.into().as_raw();
+pub unsafe fn cuda_free<P: CudaFreeable>(mut p: P) -> CudaResult<()> {
+    let ptr = p.__to_raw();
     if ptr.is_null() {
         return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
     }
@@ -151,7 +152,7 @@ pub unsafe fn cuda_free<T: DeviceCopy, P: Into<DevicePointer<T>>>(p: P) -> CudaR
 /// # Examples
 ///
 /// ```
-/// # use rustacuda::memory::*;
+/// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for 5 u64s
 ///     let locked_buffer = cuda_malloc_locked::<u64>(5).unwrap();
@@ -185,7 +186,7 @@ pub unsafe fn cuda_malloc_locked<T: DeviceCopy>(count: usize) -> CudaResult<*mut
 /// # Examples
 ///
 /// ```
-/// # use rustacuda::memory::*;
+/// use rustacuda::memory::*;
 /// unsafe {
 ///     let locked_buffer = cuda_malloc_locked::<u64>(5).unwrap();
 ///     // Free allocated memory

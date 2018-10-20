@@ -62,8 +62,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// Create a new LockedBuffer without initializing the allocated memory. The caller is
     /// responsible for ensuring that the allocated buffer is initialized.
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
+        let bytes = size.checked_mul(mem::size_of::<T>())
             .ok_or(CudaError::InvalidMemoryAllocation)?;
 
         let ptr: *mut T = if bytes > 0 {

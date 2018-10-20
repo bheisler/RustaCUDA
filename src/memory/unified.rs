@@ -7,7 +7,6 @@ use std::convert::{AsMut, AsRef};
 use std::fmt::{self, Display, Pointer};
 use std::mem;
 use std::ops::{Deref, DerefMut};
-use std::ptr;
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
@@ -21,7 +20,7 @@ impl<T: DeviceCopy> UBox<T> {
     pub fn new(val: T) -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
             Ok(UBox {
-                ptr: UnifiedPointer::wrap(ptr::null_mut()),
+                ptr: UnifiedPointer::null(),
             })
         } else {
             unsafe {
@@ -86,7 +85,7 @@ impl<T: DeviceCopy> UBox<T> {
 impl<T: DeviceCopy> Drop for UBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            let ptr = ::std::mem::replace(&mut self.ptr, UnifiedPointer::wrap(ptr::null_mut()));
+            let ptr = ::std::mem::replace(&mut self.ptr, UnifiedPointer::null());
             // No choice but to panic if this fails.
             unsafe {
                 cuda_free(ptr).expect("Failed to deallocate CUDA memory.");

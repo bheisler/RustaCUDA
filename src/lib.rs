@@ -11,3 +11,4 @@ extern crate cuda_sys;
 
 pub mod error;
 pub mod memory;
+pub mod private;
