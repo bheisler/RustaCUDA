@@ -1,58 +1,58 @@
-mod pointer;
-mod malloc;
-mod unified;
 mod locked;
+mod malloc;
+mod pointer;
+mod unified;
 //mod device;
 
-pub use self::unified::*;
 pub use self::locked::*;
-pub use self::pointer::*;
 pub use self::malloc::*;
+pub use self::pointer::*;
+pub use self::unified::*;
 //pub use self::device::*;
 
-use std::num::*;
 use std::marker::PhantomData;
+use std::num::*;
 
 /// Marker trait for types which can safely be copied to or from a CUDA device.
-/// 
+///
 /// A type can be safely copied if its value can be duplicated simply by copying bits and if it does
 /// not contain a reference to memory which is not accessible to the device. Additionally, the
 /// DeviceCopy trait does not imply copy semantics as the Copy trait does.
-/// 
+///
 /// ## How can I implement DeviceCopy?
-/// 
+///
 /// There are two ways to implement DeviceCopy on your type. The simplest is to use `derive`:
-/// 
+///
 /// ```
 /// // TODO: Implement this.
 /// ```
-/// 
+///
 /// You can also implement `DeviceCopy` manually:
-/// 
+///
 /// ```
 /// #[derive(Clone)]
 /// struct MyStruct{
 ///     x: u8
 /// }
-/// 
+///
 /// unsafe impl DeviceCopy for MyStruct { }
 /// ```
-/// 
+///
 /// ## What is the difference between `DeviceCopy` and `Copy`?
-/// 
+///
 /// `DeviceCopy` is stricter than `Copy`. `DeviceCopy` must only be implemented for types which
 /// do not contain references or raw pointers to non-device-accessible memory. `DeviceCopy` also
-/// does not imply copy semantics - that is, `DeviceCopy` values are not implicitly copied on 
-/// assignment the way that `Copy` values are. This is helpful, as it may be desirable to implement 
+/// does not imply copy semantics - that is, `DeviceCopy` values are not implicitly copied on
+/// assignment the way that `Copy` values are. This is helpful, as it may be desirable to implement
 /// `DeviceCopy` for large structures that would be inefficient to copy for every assignment.
-/// 
+///
 /// ## When can't my type be `DeviceCopy`?
-/// 
+///
 /// Some types cannot be safely copied to the device. For example, copying `&T` would create an
 /// invalid reference on the device which would segfault if dereferenced. Generalizing this, any
 /// type implementing `Drop` cannot be `DeviceCopy` since it is responsible for some resource that
 /// would not be available on the device.
-pub unsafe trait DeviceCopy : Clone {
+pub unsafe trait DeviceCopy: Clone {
     // Empty
 }
 
@@ -74,7 +74,7 @@ impl_device_copy!(
 );
 unsafe impl<T: DeviceCopy> DeviceCopy for Option<T> {}
 unsafe impl<L: DeviceCopy, R: DeviceCopy> DeviceCopy for Result<L, R> {}
-unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for PhantomData<T> { }
+unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for PhantomData<T> {}
 unsafe impl<T: DeviceCopy> DeviceCopy for Wrapping<T> {}
 
 macro_rules! impl_device_copy_array {
@@ -94,13 +94,33 @@ impl_device_copy_array!{
 unsafe impl DeviceCopy for () {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
-unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy for (A, B, C, D) {}
-unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy,
-            E: DeviceCopy> DeviceCopy for (A, B, C, D, E) {}
-unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy,
-            E: DeviceCopy, F: DeviceCopy> DeviceCopy for (A, B, C, D, E, F) {}
-unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy,
-            E: DeviceCopy, F: DeviceCopy, G: DeviceCopy> DeviceCopy for (A, B, C, D, E, F, G) {}
-unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy,
-            E: DeviceCopy, F: DeviceCopy, G: DeviceCopy, H: DeviceCopy> DeviceCopy for 
-            (A, B, C, D, E, F, G, H) {}
+unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
+    for (A, B, C, D)
+{}
+unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
+    for (A, B, C, D, E)
+{}
+unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
+    DeviceCopy for (A, B, C, D, E, F)
+{}
+unsafe impl<
+        A: DeviceCopy,
+        B: DeviceCopy,
+        C: DeviceCopy,
+        D: DeviceCopy,
+        E: DeviceCopy,
+        F: DeviceCopy,
+        G: DeviceCopy,
+    > DeviceCopy for (A, B, C, D, E, F, G)
+{}
+unsafe impl<
+        A: DeviceCopy,
+        B: DeviceCopy,
+        C: DeviceCopy,
+        D: DeviceCopy,
+        E: DeviceCopy,
+        F: DeviceCopy,
+        G: DeviceCopy,
+        H: DeviceCopy,
+    > DeviceCopy for (A, B, C, D, E, F, G, H)
+{}

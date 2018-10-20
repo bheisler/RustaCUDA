@@ -1,11 +1,11 @@
 use super::DeviceCopy;
-use error::*;
-use std::ptr;
-use std::mem;
-use std::os::raw::c_void;
 use cuda_sys::cudart::*;
-use std::slice;
+use error::*;
+use std::mem;
 use std::ops;
+use std::os::raw::c_void;
+use std::ptr;
+use std::slice;
 
 /*
 You should be able to:
@@ -16,25 +16,25 @@ You should be able to:
 */
 
 /// Fixed-size host-side buffer in page-locked memory.
-/// 
+///
 /// ## Page-locked Memory
-/// 
+///
 /// When transferring data to a CUDA device, the driver must first copy the data to a special memory
 /// page which is locked to physical memory. Once complete, it can initiate a DMA transfer to copy the
 /// data from physical memory to device memory. For some applications, it may be possible to keep
-/// the data in page-locked memory, skipping the first step. This can substantially improve data 
+/// the data in page-locked memory, skipping the first step. This can substantially improve data
 /// transfer speeds.
-/// 
+///
 /// The downside is that using excessive amounts of page-locked memory can degrade system performance
 /// by reducing the amount of physical memory available to the system for paging. As a result, it is
 /// best used sparingly, to allocate staging areas for data exchange between the host and device.
-/// 
-/// The CUDA driver tracks memory regions allocated this way and will automatically optimize 
+///
+/// The CUDA driver tracks memory regions allocated this way and will automatically optimize
 /// memory transfers to or from the device.
 #[derive(Debug)]
 pub struct LockedBuffer<T: DeviceCopy> {
     buf: *mut T,
-    capacity: usize
+    capacity: usize,
 }
 impl<T: DeviceCopy> LockedBuffer<T> {
     /// Create a new LockedBuffer of length `size` filled with clones of `value`.
@@ -48,7 +48,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
         }
     }
 
-    /// Create a new LockedBuffer with the same size as the given slice, and clone the values into 
+    /// Create a new LockedBuffer with the same size as the given slice, and clone the values into
     /// it.
     pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
         unsafe {
@@ -63,14 +63,19 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// Create a new LockedBuffer without initializing the allocated memory. The caller is
     /// responsible for ensuring that the allocated buffer is initialized.
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size.checked_mul(mem::size_of::<T>()).ok_or(CudaError::InvalidMemoryAllocation)?;
+        let bytes = size
+            .checked_mul(mem::size_of::<T>())
+            .ok_or(CudaError::InvalidMemoryAllocation)?;
 
         let mut ptr: *mut c_void = ptr::NonNull::dangling().as_ptr();
         if bytes > 0 {
             cudaMallocHost(&mut ptr as *mut *mut c_void, bytes).toResult()?;
         }
         let ptr = ptr as *mut T;
-        Ok(LockedBuffer{ buf : ptr as *mut T, capacity: size })
+        Ok(LockedBuffer {
+            buf: ptr as *mut T,
+            capacity: size,
+        })
     }
 
     /// Extracts a slice containing the entire buffer.
@@ -113,7 +118,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
             capacity: size,
         }
     }
- 
+
     // Drop
 }
 
@@ -160,7 +165,8 @@ impl<T: DeviceCopy> Drop for LockedBuffer<T> {
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
             unsafe {
-                cudaFreeHost(self.buf as *mut c_void).toResult()
+                cudaFreeHost(self.buf as *mut c_void)
+                    .toResult()
                     .expect("Failed to deallocate CUDA page-locked memory.");
             }
         }
