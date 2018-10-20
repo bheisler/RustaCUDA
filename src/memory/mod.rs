@@ -1,13 +1,14 @@
-mod ubox;
-mod locked_buf;
 mod pointer;
 mod malloc;
+mod unified;
+mod locked;
+//mod device;
 
-pub use self::ubox::UBox;
-pub use self::locked_buf::LockedBuffer;
-pub use self::pointer::DevicePointer;
-pub use self::pointer::UnifiedPointer;
+pub use self::unified::*;
+pub use self::locked::*;
+pub use self::pointer::*;
 pub use self::malloc::*;
+//pub use self::device::*;
 
 use std::num::*;
 use std::marker::PhantomData;
@@ -34,7 +35,7 @@ use std::marker::PhantomData;
 ///     x: u8
 /// }
 /// 
-/// impl DeviceCopy for MyStruct { }
+/// unsafe impl DeviceCopy for MyStruct { }
 /// ```
 /// 
 /// ## What is the difference between `DeviceCopy` and `Copy`?

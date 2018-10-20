@@ -12,6 +12,13 @@ use super::DeviceCopy;
 use memory::DevicePointer;
 use memory::UnifiedPointer;
 
+/*
+You should be able to:
+- Allocate and free unified memory
+- Allocate and free Device memory
+- Allocate and free locked memory
+*/
+
 /// Unsafe wrapper around the cudaMalloc function, which allocates some device memory and
 /// returns a DevicePointer pointing to it.
 /// 

@@ -7,6 +7,14 @@ use cuda_sys::cudart::*;
 use std::slice;
 use std::ops;
 
+/*
+You should be able to:
+- Allocate and deallocate a locked buffer
+- Arbitrarily read/write to the elements of that buffer
+- Copy data to/from a DeviceBuffer
+- Slice the locked buffer
+*/
+
 /// Fixed-size host-side buffer in page-locked memory.
 /// 
 /// ## Page-locked Memory
