@@ -17,7 +17,7 @@
 //! and the device. When the host (or device) attempts to access a page of unified memory, it is
 //! seamlessly transferred from CPU RAM to GPU RAM or vice versa. The programmer may also choose to
 //! explicitly prefetch data to one side or another. RustaCUDA exposes unified memory through the
-//! [`UBox`](struct.UBox.html) and [`UBuffer`](struct.UBuffer.html) structures, and pointers to
+//! [`UnifiedBox`](struct.UnifiedBox.html) and [`UBuffer`](struct.UBuffer.html) structures, and pointers to
 //! unified memory are represented by [`UnifiedPointer`](struct.UnifiedPointer.html).
 //!
 //! Unified memory is generally easier to use than device memory, but there are drawbacks. It is
