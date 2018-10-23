@@ -23,8 +23,7 @@
 //! Unified memory is generally easier to use than device memory, but there are drawbacks. It is
 //! possible to allocate more memory than is available on the card, and this can result in very slow
 //! paging behavior. Additionally, it can require careful use of prefetching to achieve optimum
-//! performance. Nevertheless, unified memory is recommended and should be considered the default
-//! choice.
+//! performance. Finally, unified memory is not supported on some older systems.
 //!
 //! # Page-locked Host Memory
 //!
@@ -146,16 +145,13 @@ unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
     for (A, B, C, D)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
     for (A, B, C, D, E)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
     DeviceCopy for (A, B, C, D, E, F)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -165,8 +161,7 @@ unsafe impl<
         F: DeviceCopy,
         G: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -177,5 +172,4 @@ unsafe impl<
         G: DeviceCopy,
         H: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G, H)
-{
-}
+{}

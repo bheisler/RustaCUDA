@@ -11,6 +11,7 @@ use std::ops::{Deref, DerefMut};
 /*
 You should be able to:
 - Prefetch unified data to/from the device
+
 */
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
@@ -22,6 +23,15 @@ pub struct UBox<T: DeviceCopy> {
 }
 impl<T: DeviceCopy> UBox<T> {
     /// Allocate unified memory and place val into it.
+    ///
+    /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let five = UBox::new(5).unwrap();
+    /// ```
     pub fn new(val: T) -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
             Ok(UBox {
@@ -39,13 +49,23 @@ impl<T: DeviceCopy> UBox<T> {
     /// Constructs a UBox from a raw pointer.
     ///
     /// After calling this function, the raw pointer and the memory it points to is owned by the
-    /// UBox. The UBox destructor will call the destructor of T and free the allocated memory.
-    /// This function may accept any pointer produced by the `cudaMallocManaged` CUDA API call,
-    /// such as one taken from `UBox::as_raw`.
+    /// UBox. The UBox destructor will free the allocated memory, but will not call the destructor
+    /// of `T`. This function may accept any pointer produced by the `cudaMallocManaged` CUDA API
+    /// call, such as one taken from `UBox::into_raw`.
+    ///
+    /// # Safety:
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = UBox::new(5).unwrap();
+    /// let ptr = UBox::into_raw(x);
+    /// let x = unsafe { UBox::from_raw(ptr) };
+    /// ```
     pub unsafe fn from_raw(ptr: *mut T) -> Self {
         UBox {
             ptr: UnifiedPointer::wrap(ptr),
@@ -61,6 +81,14 @@ impl<T: DeviceCopy> UBox<T> {
     /// Note: This is an associated function, which means that you have to all it as
     /// `UBox::as_raw(b)` instead of `b.as_raw()` This is so that there is no conflict with
     /// a method on the inner type.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = UBox::new(5).unwrap();
+    /// let ptr = UBox::into_raw(x);
+    /// # unsafe { UBox::from_raw(ptr) };
+    /// ```
     #[allow(wrong_self_convention)]
     pub fn into_raw(mut b: UBox<T>) -> *mut T {
         let ptr = b.ptr.as_raw_mut();
@@ -139,5 +167,38 @@ impl<T: Display + DeviceCopy> Display for UBox<T> {
 impl<T: DeviceCopy> Pointer for UBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[derive(Clone, Debug)]
+    struct ZeroSizedType;
+    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+
+    #[test]
+    fn test_allocate_and_free_ubox() {
+        let mut x = UBox::new(5u64).unwrap();
+        *x = 10;
+        assert_eq!(10, *x);
+        drop(x);
+    }
+
+    #[test]
+    fn test_ubox_allocates_for_non_zst() {
+        let x = UBox::new(5u64).unwrap();
+        let ptr = UBox::into_raw(x);
+        assert!(!ptr.is_null());
+        let _ = unsafe { UBox::from_raw(ptr) };
+    }
+
+    #[test]
+    fn test_ubox_doesnt_allocate_for_zero_sized_type() {
+        let x = UBox::new(ZeroSizedType).unwrap();
+        let ptr = UBox::into_raw(x);
+        assert!(ptr.is_null());
+        let _ = unsafe { UBox::from_raw(ptr) };
     }
 }
