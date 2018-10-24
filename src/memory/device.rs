@@ -62,7 +62,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
     ///
     /// ```
     /// use rustacuda::memory::*;
-    /// let five = DeviceBox::new(5).unwrap();
+    /// let five = DeviceBox::new(&5).unwrap();
     /// ```
     pub fn new(val: &T) -> CudaResult<Self> {
         let mut dev_box = unsafe { DeviceBox::uninit()? };
@@ -114,7 +114,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
     /// # Examples:
     /// ```
     /// use rustacuda::memory::*;
-    /// let x = DeviceBox::new(5).unwrap();
+    /// let x = DeviceBox::new(&5).unwrap();
     /// let ptr = DeviceBox::into_device(x).as_raw_mut();
     /// let x = unsafe { DeviceBox::from_raw(ptr) };
     /// ```
@@ -140,7 +140,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
     /// # Examples:
     /// ```
     /// use rustacuda::memory::*;
-    /// let x = DeviceBox::new(5).unwrap();
+    /// let x = DeviceBox::new(&5).unwrap();
     /// let ptr = DeviceBox::into_device(x);
     /// let x = unsafe { DeviceBox::from_device(ptr) };
     /// ```
@@ -161,7 +161,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
     /// # Examples:
     /// ```
     /// use rustacuda::memory::*;
-    /// let x = DeviceBox::new(5).unwrap();
+    /// let x = DeviceBox::new(&5).unwrap();
     /// let ptr = DeviceBox::into_device(x);
     /// # unsafe { DeviceBox::from_device(ptr) };
     /// ```
@@ -170,25 +170,6 @@ impl<T: DeviceCopy> DeviceBox<T> {
         let ptr = mem::replace(&mut b.ptr, DevicePointer::null());
         mem::forget(b);
         ptr
-    }
-
-    /// Consumes and leaks the DeviceBox, returning a mutable reference, &'a mut T. Note that the type T
-    /// must outlive the chosen lifetime 'a. If the type has only static references, or none at all,
-    /// this may be chosen to be 'static.
-    ///
-    /// This is mainly useful for data that lives for the remainder of the program's life. Dropping
-    /// the returned reference will cause a memory leak. If this is not acceptable, the reference
-    /// should be wrapped with the DeviceBox::from_raw function to produce a new DeviceBox. This DeviceBox can then
-    /// be dropped, which will properly destroy T and release the allocated memory.
-    ///
-    /// Note: This is an associated function, which means that you have to all it as
-    /// `DeviceBox::leak(b)` instead of `b.leak()` This is so that there is no conflict with
-    /// a method on the inner type.
-    pub fn leak<'a>(b: DeviceBox<T>) -> &'a mut T
-    where
-        T: 'a,
-    {
-        unsafe { &mut *DeviceBox::into_device(b).as_raw_mut() }
     }
 }
 impl<T: DeviceCopy> Drop for DeviceBox<T> {

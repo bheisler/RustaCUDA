@@ -3,8 +3,10 @@ use error::*;
 use memory::UnifiedPointer;
 use memory::{cuda_free, cuda_malloc_unified};
 use std::borrow::{Borrow, BorrowMut};
+use std::cmp::Ordering;
 use std::convert::{AsMut, AsRef};
 use std::fmt::{self, Display, Pointer};
+use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 
@@ -226,6 +228,39 @@ impl<T: DeviceCopy> Pointer for UnifiedBox<T> {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
+impl<T: DeviceCopy + PartialEq> PartialEq for UnifiedBox<T> {
+    fn eq(&self, other: &UnifiedBox<T>) -> bool {
+        PartialEq::eq(&**self, &**other)
+    }
+}
+impl<T: DeviceCopy + Eq> Eq for UnifiedBox<T> {}
+impl<T: DeviceCopy + PartialOrd> PartialOrd for UnifiedBox<T> {
+    fn partial_cmp(&self, other: &UnifiedBox<T>) -> Option<Ordering> {
+        PartialOrd::partial_cmp(&**self, &**other)
+    }
+    fn lt(&self, other: &UnifiedBox<T>) -> bool {
+        PartialOrd::lt(&**self, &**other)
+    }
+    fn le(&self, other: &UnifiedBox<T>) -> bool {
+        PartialOrd::le(&**self, &**other)
+    }
+    fn ge(&self, other: &UnifiedBox<T>) -> bool {
+        PartialOrd::ge(&**self, &**other)
+    }
+    fn gt(&self, other: &UnifiedBox<T>) -> bool {
+        PartialOrd::gt(&**self, &**other)
+    }
+}
+impl<T: DeviceCopy + Ord> Ord for UnifiedBox<T> {
+    fn cmp(&self, other: &UnifiedBox<T>) -> Ordering {
+        Ord::cmp(&**self, &**other)
+    }
+}
+impl<T: DeviceCopy + Hash> Hash for UnifiedBox<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        (**self).hash(state);
+    }
+}
 
 #[cfg(test)]
 mod test {
@@ -264,5 +299,22 @@ mod test {
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         let _ = unsafe { UnifiedBox::from_unified(ptr) };
+    }
+
+    #[test]
+    fn test_equality() {
+        let x = UnifiedBox::new(5u64).unwrap();
+        let y = UnifiedBox::new(5u64).unwrap();
+        let z = UnifiedBox::new(0u64).unwrap();
+        assert_eq!(x, y);
+        assert!(x != z);
+    }
+
+    #[test]
+    fn test_ordering() {
+        let x = UnifiedBox::new(1u64).unwrap();
+        let y = UnifiedBox::new(2u64).unwrap();
+
+        assert!(x < y);
     }
 }
