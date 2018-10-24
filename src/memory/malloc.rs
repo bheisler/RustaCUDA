@@ -6,7 +6,6 @@ use cuda_sys::cudart::{
 use error::*;
 use memory::DevicePointer;
 use memory::UnifiedPointer;
-use private::CudaFreeable;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
@@ -82,7 +81,7 @@ pub unsafe fn cuda_malloc<T: DeviceCopy>(count: usize) -> CudaResult<DevicePoint
 ///     let mut unified_buffer = cuda_malloc_unified::<u64>(1).unwrap();
 ///     // Write to it
 ///     *unified_buffer.as_raw_mut() = 5u64;
-///     cuda_free(unified_buffer).unwrap();
+///     cuda_free_unified(unified_buffer).unwrap();
 /// }
 /// ```
 pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<UnifiedPointer<T>> {
@@ -97,7 +96,7 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
     Ok(UnifiedPointer::wrap(ptr as *mut T))
 }
 
-/// Free memory allocated with [`cuda_malloc`](fn.cuda_malloc.html) or [`cuda_malloc_unified`](fn.cuda_malloc_unified.html).
+/// Free memory allocated with [`cuda_malloc`](fn.cuda_malloc.html).
 ///
 /// # Errors
 ///
@@ -106,7 +105,7 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 ///
 /// # Safety
 ///
-/// The given pointer must have been allocated with `cuda_malloc` or `cuda_malloc_unified`, or null.
+/// The given pointer must have been allocated with `cuda_malloc`, or null.
 /// The caller is responsible for ensuring that no other pointers to the deallocated buffer exist.
 ///
 /// # Examples
@@ -119,8 +118,40 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 ///     cuda_free(device_buffer).unwrap();
 /// }
 /// ```
-pub unsafe fn cuda_free<P: CudaFreeable>(mut p: P) -> CudaResult<()> {
-    let ptr = p.__to_raw();
+pub unsafe fn cuda_free<T: DeviceCopy>(mut p: DevicePointer<T>) -> CudaResult<()> {
+    let ptr = p.as_raw_mut();
+    if ptr.is_null() {
+        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+    }
+
+    cudaFree_raw(ptr as *mut c_void).toResult()?;
+    Ok(())
+}
+
+/// Free memory allocated with [`cuda_malloc_unified`](fn.cuda_malloc_unified.html).
+///
+/// # Errors
+///
+/// If freeing memory fails, returns the CUDA error value. If the given pointer is null, returns
+/// InvalidValue.
+///
+/// # Safety
+///
+/// The given pointer must have been allocated with `cuda_malloc_unified`, or null.
+/// The caller is responsible for ensuring that no other pointers to the deallocated buffer exist.
+///
+/// # Examples
+///
+/// ```
+/// use rustacuda::memory::*;
+/// unsafe {
+///     let unified_buffer = cuda_malloc_unified::<u64>(5).unwrap();
+///     // Free allocated memory.
+///     cuda_free_unified(unified_buffer).unwrap();
+/// }
+/// ```
+pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> CudaResult<()> {
+    let ptr = p.as_raw_mut();
     if ptr.is_null() {
         return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
     }
@@ -258,7 +289,7 @@ mod test {
             // Write to the allocated memory
             *unified.as_raw_mut() = 64;
 
-            cuda_free(unified).unwrap();
+            cuda_free_unified(unified).unwrap();
         }
     }
 

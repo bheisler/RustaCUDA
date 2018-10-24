@@ -17,8 +17,9 @@
 //! and the device. When the host (or device) attempts to access a page of unified memory, it is
 //! seamlessly transferred from CPU RAM to GPU RAM or vice versa. The programmer may also choose to
 //! explicitly prefetch data to one side or another. RustaCUDA exposes unified memory through the
-//! [`UnifiedBox`](struct.UnifiedBox.html) and [`UBuffer`](struct.UBuffer.html) structures, and pointers to
-//! unified memory are represented by [`UnifiedPointer`](struct.UnifiedPointer.html).
+//! [`UnifiedBox`](struct.UnifiedBox.html) and [`UnifiedBuffer`](struct.UnifiedBuffer.html)
+//! structures, and pointers to unified memory are represented by
+//! [`UnifiedPointer`](struct.UnifiedPointer.html).
 //!
 //! Unified memory is generally easier to use than device memory, but there are drawbacks. It is
 //! possible to allocate more memory than is available on the card, and this can result in very slow
@@ -145,16 +146,13 @@ unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
     for (A, B, C, D)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
     for (A, B, C, D, E)
-{
-}
+{}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
     DeviceCopy for (A, B, C, D, E, F)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -164,8 +162,7 @@ unsafe impl<
         F: DeviceCopy,
         G: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G)
-{
-}
+{}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -176,5 +173,4 @@ unsafe impl<
         G: DeviceCopy,
         H: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G, H)
-{
-}
+{}

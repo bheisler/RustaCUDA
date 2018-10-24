@@ -1,7 +1,7 @@
 use super::DeviceCopy;
 use error::*;
 use memory::UnifiedPointer;
-use memory::{cuda_free, cuda_malloc_unified};
+use memory::{cuda_free_unified, cuda_malloc_unified};
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::convert::{AsMut, AsRef};
@@ -44,7 +44,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
                 ptr: UnifiedPointer::null(),
             })
         } else {
-            let mut ubox = unsafe { UnifiedBox::uninit()? };
+            let mut ubox = unsafe { UnifiedBox::uninitialized()? };
             *ubox = val;
             Ok(ubox)
         }
@@ -68,9 +68,10 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     ///
     /// ```
     /// use rustacuda::memory::*;
-    /// let five = UnifiedBox::new(5).unwrap();
+    /// let mut five = unsafe{ UnifiedBox::uninitialized().unwrap() };
+    /// *five = 5u64;
     /// ```
-    pub unsafe fn uninit() -> CudaResult<Self> {
+    pub unsafe fn uninitialized() -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
             Ok(UnifiedBox {
                 ptr: UnifiedPointer::null(),
@@ -180,7 +181,7 @@ impl<T: DeviceCopy> Drop for UnifiedBox<T> {
             let ptr = ::std::mem::replace(&mut self.ptr, UnifiedPointer::null());
             // No choice but to panic if this fails.
             unsafe {
-                cuda_free(ptr).expect("Failed to deallocate CUDA memory.");
+                cuda_free_unified(ptr).expect("Failed to deallocate CUDA Unified memory.");
             }
         }
     }

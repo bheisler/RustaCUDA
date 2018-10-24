@@ -291,21 +291,12 @@ impl<T: DeviceCopy> DevicePointer<T> {
     ///
     /// # Examples
     ///
-    /// Basic usage:
-    ///
     /// ```
-    /// // Iterate using a raw pointer in increments of two elements (backwards)
-    /// let data = [1u8, 2, 3, 4, 5];
-    /// let mut ptr: *const u8 = data.as_ptr();
-    /// let start_rounded_down = ptr.wrapping_sub(2);
-    /// ptr = ptr.wrapping_add(4);
-    /// let step = 2;
-    /// // This loop prints "5, 3, 1, "
-    /// while ptr != start_rounded_down {
-    ///     unsafe {
-    ///         print!("{}, ", *ptr);
-    ///     }
-    ///     ptr = ptr.wrapping_sub(step);
+    /// use rustacuda::memory::*;
+    /// unsafe {
+    ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
+    ///     let offset = dev_ptr.wrapping_add(4).wrapping_sub(3); // Points to the 2nd u64 in the buffer
+    ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     pub fn wrapping_sub(self, count: usize) -> Self
@@ -375,7 +366,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// unsafe {
     ///     let unified_ptr = cuda_malloc_unified::<u64>(1).unwrap();
     ///     let ptr: *const u64 = unified_ptr.as_raw();
-    ///     cuda_free(unified_ptr);
+    ///     cuda_free_unified(unified_ptr);
     /// }
     /// ```
     pub fn as_raw(&self) -> *const T {
@@ -392,7 +383,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(1).unwrap();
     ///     let ptr: *mut u64 = unified_ptr.as_raw_mut();
     ///     *ptr = 5u64;
-    ///     cuda_free(unified_ptr);
+    ///     cuda_free_unified(unified_ptr);
     /// }
     /// ```
     pub fn as_raw_mut(&mut self) -> *mut T {
@@ -442,9 +433,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// unsafe {
-    ///     let mut unified_ptr = cuda_malloc::<u64>(5).unwrap();
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
     ///     let offset = unified_ptr.offset(1); // Points to the 2nd u64 in the buffer
-    ///     cuda_free(unified_ptr); // Must free the buffer using the original pointer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     pub unsafe fn offset(self, count: isize) -> Self {
@@ -475,9 +466,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// unsafe {
-    ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
-    ///     let offset = dev_ptr.wrapping_offset(1); // Points to the 2nd u64 in the buffer
-    ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
+    ///     let offset = unified_ptr.wrapping_offset(1); // Points to the 2nd u64 in the buffer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     pub fn wrapping_offset(self, count: isize) -> Self {
@@ -511,9 +502,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// unsafe {
-    ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
-    ///     let offset = dev_ptr.add(1); // Points to the 2nd u64 in the buffer
-    ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
+    ///     let offset = unified_ptr.add(1); // Points to the 2nd u64 in the buffer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     #[allow(should_implement_trait)]
@@ -552,9 +543,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// unsafe {
-    ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
-    ///     let offset = dev_ptr.add(4).sub(3); // Points to the 2nd u64 in the buffer
-    ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
+    ///     let offset = unified_ptr.add(4).sub(3); // Points to the 2nd u64 in the buffer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     #[allow(should_implement_trait)]
     pub unsafe fn sub(self, count: usize) -> Self
@@ -583,9 +574,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// unsafe {
-    ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
-    ///     let offset = dev_ptr.wrapping_add(1); // Points to the 2nd u64 in the buffer
-    ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
+    ///     let offset = unified_ptr.wrapping_add(1); // Points to the 2nd u64 in the buffer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     pub fn wrapping_add(self, count: usize) -> Self
@@ -612,18 +603,11 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
-    /// // Iterate using a raw pointer in increments of two elements (backwards)
-    /// let data = [1u8, 2, 3, 4, 5];
-    /// let mut ptr: *const u8 = data.as_ptr();
-    /// let start_rounded_down = ptr.wrapping_sub(2);
-    /// ptr = ptr.wrapping_add(4);
-    /// let step = 2;
-    /// // This loop prints "5, 3, 1, "
-    /// while ptr != start_rounded_down {
-    ///     unsafe {
-    ///         print!("{}, ", *ptr);
-    ///     }
-    ///     ptr = ptr.wrapping_sub(step);
+    /// use rustacuda::memory::*;
+    /// unsafe {
+    ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
+    ///     let offset = unified_ptr.wrapping_add(4).wrapping_sub(3); // Points to the 2nd u64 in the buffer
+    ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
     pub fn wrapping_sub(self, count: usize) -> Self

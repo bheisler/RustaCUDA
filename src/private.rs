@@ -3,35 +3,10 @@
 //! These traits may change in any way at any time with no warning, and this will not be considered
 //! a breaking change.
 
-use memory::{DeviceCopy, DevicePointer, UnifiedPointer};
-use std::os::raw::c_void;
+use memory::{DeviceBox, DeviceCopy, DevicePointer, UnifiedPointer};
 
-/// Trait implemented by the types which can be passed to [`cuda_free`](../memory/fn.cuda_free.html).
-/// This is not intended to be used or implemented outside of RustaCUDA. See the
-/// [`private module`](../private/index.html) for details.
-pub trait CudaFreeable: private_2::Sealed {
-    #[doc(hidden)]
-    fn __to_raw(&mut self) -> *mut c_void;
-}
+pub trait Sealed {}
 
-impl<T: DeviceCopy> CudaFreeable for DevicePointer<T> {
-    fn __to_raw(&mut self) -> *mut c_void {
-        self.as_raw_mut() as *mut c_void
-    }
-}
-impl<T: DeviceCopy> CudaFreeable for UnifiedPointer<T> {
-    fn __to_raw(&mut self) -> *mut c_void {
-        self.as_raw_mut() as *mut c_void
-    }
-}
-
-pub(crate) mod private_2 {
-    use super::*;
-    use memory::{DeviceBox, DevicePointer, UnifiedPointer};
-
-    pub trait Sealed {}
-
-    impl<T: DeviceCopy> Sealed for DevicePointer<T> {}
-    impl<T: DeviceCopy> Sealed for UnifiedPointer<T> {}
-    impl<T: DeviceCopy> Sealed for DeviceBox<T> {}
-}
+impl<T: DeviceCopy> Sealed for DevicePointer<T> {}
+impl<T: DeviceCopy> Sealed for UnifiedPointer<T> {}
+impl<T: DeviceCopy> Sealed for DeviceBox<T> {}

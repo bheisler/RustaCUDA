@@ -27,7 +27,7 @@ You should be able to:
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// to/from the device.
-pub trait CopyDestination<O>: ::private::private_2::Sealed {
+pub trait CopyDestination<O>: ::private::Sealed {
     /// Copy data from `source`. `source` must be the same size that `self` was allocated for.
     ///
     /// # Errors:
@@ -65,7 +65,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
     /// let five = DeviceBox::new(&5).unwrap();
     /// ```
     pub fn new(val: &T) -> CudaResult<Self> {
-        let mut dev_box = unsafe { DeviceBox::uninit()? };
+        let mut dev_box = unsafe { DeviceBox::uninitialized()? };
         dev_box.copy_from(val)?;
         Ok(dev_box)
     }
@@ -84,10 +84,10 @@ impl<T: DeviceCopy> DeviceBox<T> {
     ///
     /// ```
     /// use rustacuda::memory::*;
-    /// let mut five = unsafe { DeviceBox::uninit().unwrap() };
+    /// let mut five = unsafe { DeviceBox::uninitialized().unwrap() };
     /// five.copy_from(&5u64).unwrap();
     /// ```
-    pub unsafe fn uninit() -> CudaResult<Self> {
+    pub unsafe fn uninitialized() -> CudaResult<Self> {
         if mem::size_of::<T>() == 0 {
             Ok(DeviceBox {
                 ptr: DevicePointer::null(),
@@ -331,17 +331,17 @@ pub struct DeviceBuffer<T: DeviceCopy> {
 impl<T: DeviceCopy> DeviceBuffer<T> {
     /// Create a new DeviceBuffer and fill it with zeroes.
     pub fn zeroed(size: usize) -> CudaResult<Self> {
-        let mut uninit = unsafe { DeviceBuffer::uninitialized(size)? };
-        uninit.memset(0);
-        Ok(uninit)
+        let mut uninitialized = unsafe { DeviceBuffer::uninitialized(size)? };
+        uninitialized.memset(0);
+        Ok(uninitialized)
     }
 
     /// Create a new DeviceBuffer with the same size as the given slice, and copy the values into 
     /// it.
     pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
-        let mut uninit = { DeviceBuffer::uninitialized(slice.len())? };
-        uninit.copy_from(slice);
-        Ok(uninit)
+        let mut uninitialized = { DeviceBuffer::uninitialized(slice.len())? };
+        uninitialized.copy_from(slice);
+        Ok(uninitialized)
     }
 
     /// Create a new DeviceBuffer without initializing the allocated memory. The caller is
