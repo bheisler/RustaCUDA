@@ -51,7 +51,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// After calling this function, the raw pointer and the memory it points to is owned by the
     /// UnifiedBox. The UnifiedBox destructor will free the allocated memory, but will not call the destructor
     /// of `T`. This function may accept any pointer produced by the `cudaMallocManaged` CUDA API
-    /// call, such as one taken from `UnifiedBox::into_raw`.
+    /// call.
     ///
     /// # Safety:
     ///
@@ -63,7 +63,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// ```
     /// use rustacuda::memory::*;
     /// let x = UnifiedBox::new(5).unwrap();
-    /// let ptr = UnifiedBox::into_raw(x);
+    /// let ptr = UnifiedBox::into_unified(x).as_raw_mut();
     /// let x = unsafe { UnifiedBox::from_raw(ptr) };
     /// ```
     pub unsafe fn from_raw(ptr: *mut T) -> Self {
@@ -72,26 +72,50 @@ impl<T: DeviceCopy> UnifiedBox<T> {
         }
     }
 
-    /// Consumes the UnifiedBox, returning the wrapped unified-memory pointer.
+    /// Constructs a UnifiedBox from a UnifiedPointer.
+    ///
+    /// After calling this function, the pointer and the memory it points to is owned by the
+    /// UnifiedBox. The UnifiedBox destructor will free the allocated memory, but will not call the destructor
+    /// of `T`. This function may accept any pointer produced by the `cudaMallocManaged` CUDA API
+    /// call, such as one taken from `UnifiedBox::into_unified`.
+    ///
+    /// # Safety:
+    ///
+    /// This function is unsafe because improper use may lead to memory problems. For example, a
+    /// double free may occur if this function is called twice on the same pointer, or a segfault
+    /// may occur if the pointer is not one returned by the appropriate API call.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = UnifiedBox::new(5).unwrap();
+    /// let ptr = UnifiedBox::into_unified(x);
+    /// let x = unsafe { UnifiedBox::from_unified(ptr) };
+    /// ```
+    pub unsafe fn from_unified(ptr: UnifiedPointer<T>) -> Self {
+        UnifiedBox { ptr }
+    }
+
+    /// Consumes the UnifiedBox, returning the wrapped UnifiedPointer.
     ///
     /// After calling this function, the caller is responsible for the memory previously managed by
     /// the UnifiedBox. In particular, the caller should properly destroy T and deallocate the memory.
-    /// The easiest way to do so is to create a new UnifiedBox using the UnifiedBox::from_raw function.
+    /// The easiest way to do so is to create a new UnifiedBox using the `UnifiedBox::from_unified` function.
     ///
     /// Note: This is an associated function, which means that you have to all it as
-    /// `UnifiedBox::as_raw(b)` instead of `b.as_raw()` This is so that there is no conflict with
+    /// `UnifiedBox::into_unified(b)` instead of `b.into_unified()` This is so that there is no conflict with
     /// a method on the inner type.
     ///
     /// # Examples:
     /// ```
     /// use rustacuda::memory::*;
     /// let x = UnifiedBox::new(5).unwrap();
-    /// let ptr = UnifiedBox::into_raw(x);
-    /// # unsafe { UnifiedBox::from_raw(ptr) };
+    /// let ptr = UnifiedBox::into_unified(x);
+    /// # unsafe { UnifiedBox::from_unified(ptr) };
     /// ```
     #[allow(wrong_self_convention)]
-    pub fn into_raw(mut b: UnifiedBox<T>) -> *mut T {
-        let ptr = b.ptr.as_raw_mut();
+    pub fn into_unified(mut b: UnifiedBox<T>) -> UnifiedPointer<T> {
+        let ptr = mem::replace(&mut b.ptr, UnifiedPointer::null());
         mem::forget(b);
         ptr
     }
@@ -112,7 +136,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     where
         T: 'a,
     {
-        unsafe { &mut *UnifiedBox::into_raw(b) }
+        unsafe { &mut *UnifiedBox::into_unified(b).as_raw_mut() }
     }
 }
 impl<T: DeviceCopy> Drop for UnifiedBox<T> {
@@ -189,16 +213,23 @@ mod test {
     #[test]
     fn test_unified_box_allocates_for_non_zst() {
         let x = UnifiedBox::new(5u64).unwrap();
-        let ptr = UnifiedBox::into_raw(x);
+        let ptr = UnifiedBox::into_unified(x);
         assert!(!ptr.is_null());
-        let _ = unsafe { UnifiedBox::from_raw(ptr) };
+        let _ = unsafe { UnifiedBox::from_unified(ptr) };
     }
 
     #[test]
     fn test_unified_box_doesnt_allocate_for_zero_sized_type() {
         let x = UnifiedBox::new(ZeroSizedType).unwrap();
-        let ptr = UnifiedBox::into_raw(x);
+        let ptr = UnifiedBox::into_unified(x);
         assert!(ptr.is_null());
-        let _ = unsafe { UnifiedBox::from_raw(ptr) };
+        let _ = unsafe { UnifiedBox::from_unified(ptr) };
+    }
+
+    #[test]
+    fn test_into_from_unified() {
+        let mut x = UnifiedBox::new(5u64).unwrap();
+        let ptr = UnifiedBox::into_unified(x);
+        let _ = unsafe { UnifiedBox::from_unified(ptr) };
     }
 }

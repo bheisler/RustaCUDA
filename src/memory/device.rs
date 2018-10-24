@@ -34,8 +34,10 @@ You should also be able to:
 - Convert box to and from raw pointers
 */
 
-/// Fixed-size device-side buffer.
-#[derive(Debug)]
+pub struct
+
+/// Fixed-size device-side buffer. Provides basic access to device memory
+/*#[derive(Debug)]
 pub struct DeviceBuffer<T: DeviceCopy> {
     buf: DevicePointer<T>,
     capacity: usize
@@ -116,3 +118,4 @@ impl<T: DeviceCopy> Drop for DeviceBuffer<T> {
         self.capacity = 0;
     }
 }
+*/
