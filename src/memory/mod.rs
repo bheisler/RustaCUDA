@@ -45,17 +45,17 @@
 //! system (including other processes) as physical RAM is tied up.  Therefore, page-locked memory
 //! should be used sparingly.
 
+mod device;
 mod locked;
 mod malloc;
 mod pointer;
 mod unified;
-//mod device;
 
+pub use self::device::*;
 pub use self::locked::*;
 pub use self::malloc::*;
 pub use self::pointer::*;
 pub use self::unified::*;
-//pub use self::device::*;
 
 use std::marker::PhantomData;
 use std::num::*;
@@ -145,13 +145,16 @@ unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
     for (A, B, C, D)
-{}
+{
+}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
     for (A, B, C, D, E)
-{}
+{
+}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
     DeviceCopy for (A, B, C, D, E, F)
-{}
+{
+}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -161,7 +164,8 @@ unsafe impl<
         F: DeviceCopy,
         G: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G)
-{}
+{
+}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -172,4 +176,5 @@ unsafe impl<
         G: DeviceCopy,
         H: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G, H)
-{}
+{
+}

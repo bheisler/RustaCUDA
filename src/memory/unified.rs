@@ -11,13 +11,13 @@ use std::ops::{Deref, DerefMut};
 /*
 You should be able to:
 - Prefetch unified data to/from the device
-
+- Hash/eq/ord compare values in a UnifiedBox
 */
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
 /// that the allocated memory can be seamlessly shared between host and device.
-#[derive(Eq, Ord, Clone, Debug, PartialEq, PartialOrd, Hash)]
+#[derive(Debug)]
 pub struct UnifiedBox<T: DeviceCopy> {
     ptr: UnifiedPointer<T>,
 }
@@ -25,6 +25,10 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// Allocate unified memory and place val into it.
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Errors:
+    ///
+    /// If a CUDA error occurs, returns that error.
     ///
     /// # Examples:
     ///
@@ -38,11 +42,40 @@ impl<T: DeviceCopy> UnifiedBox<T> {
                 ptr: UnifiedPointer::null(),
             })
         } else {
-            unsafe {
-                let mut ptr = cuda_malloc_unified(1)?;
-                *ptr.as_raw_mut() = val;
-                Ok(UnifiedBox { ptr })
-            }
+            let mut ubox = unsafe { UnifiedBox::uninit()? };
+            *ubox = val;
+            Ok(ubox)
+        }
+    }
+
+    /// Allocate unified memory without initializing it.
+    ///
+    /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Safety:
+    ///
+    /// Since the backing memory is not initialized, this function is not safe. The caller must
+    /// ensure that the backing memory is set to a valid value before it is read, else undefined
+    /// behavior may occur.
+    ///
+    /// # Errors:
+    ///
+    /// If a CUDA error occurs, returns that error.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let five = UnifiedBox::new(5).unwrap();
+    /// ```
+    pub unsafe fn uninit() -> CudaResult<Self> {
+        if mem::size_of::<T>() == 0 {
+            Ok(UnifiedBox {
+                ptr: UnifiedPointer::null(),
+            })
+        } else {
+            let ptr = cuda_malloc_unified(1)?;
+            Ok(UnifiedBox { ptr })
         }
     }
 
@@ -228,7 +261,7 @@ mod test {
 
     #[test]
     fn test_into_from_unified() {
-        let mut x = UnifiedBox::new(5u64).unwrap();
+        let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         let _ = unsafe { UnifiedBox::from_unified(ptr) };
     }

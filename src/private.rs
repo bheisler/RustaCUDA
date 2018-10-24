@@ -9,7 +9,7 @@ use std::os::raw::c_void;
 /// Trait implemented by the types which can be passed to [`cuda_free`](../memory/fn.cuda_free.html).
 /// This is not intended to be used or implemented outside of RustaCUDA. See the
 /// [`private module`](../private/index.html) for details.
-pub trait CudaFreeable: private_2::SealedCudaFreeable {
+pub trait CudaFreeable: private_2::Sealed {
     #[doc(hidden)]
     fn __to_raw(&mut self) -> *mut c_void;
 }
@@ -25,11 +25,13 @@ impl<T: DeviceCopy> CudaFreeable for UnifiedPointer<T> {
     }
 }
 
-mod private_2 {
+pub(crate) mod private_2 {
     use super::*;
+    use memory::{DeviceBox, DevicePointer, UnifiedPointer};
 
-    pub trait SealedCudaFreeable {}
+    pub trait Sealed {}
 
-    impl<T: DeviceCopy> SealedCudaFreeable for DevicePointer<T> {}
-    impl<T: DeviceCopy> SealedCudaFreeable for UnifiedPointer<T> {}
+    impl<T: DeviceCopy> Sealed for DevicePointer<T> {}
+    impl<T: DeviceCopy> Sealed for UnifiedPointer<T> {}
+    impl<T: DeviceCopy> Sealed for DeviceBox<T> {}
 }

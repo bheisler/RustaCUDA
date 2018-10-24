@@ -87,8 +87,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
+        let bytes = size.checked_mul(mem::size_of::<T>())
             .ok_or(CudaError::InvalidMemoryAllocation)?;
 
         let ptr: *mut T = if bytes > 0 {

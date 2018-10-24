@@ -7,7 +7,7 @@ use std::ptr;
 /// the device. It can be safely copied to the device (eg. as part of a kernel launch) and either
 /// unwrapped or transmuted to an appropriate pointer.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct DevicePointer<T: DeviceCopy>(*mut T);
 unsafe impl<T: DeviceCopy> DeviceCopy for DevicePointer<T> {}
 impl<T: DeviceCopy> DevicePointer<T> {

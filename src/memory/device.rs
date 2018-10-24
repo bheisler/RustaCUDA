@@ -1,14 +1,11 @@
-use memory::DevicePointer;
+use cuda_sys::cudart::*;
+use error::{CudaResult, ToResult};
 use memory::DeviceCopy;
-use memory::{cuda_malloc, cuda_free};
-use error::{CudaResult, CudaError};
+use memory::DevicePointer;
+use memory::{cuda_free, cuda_malloc};
+use std::fmt::{self, Pointer};
 use std::mem;
-use std::ptr;
-use std::ops;
 use std::os::raw::c_void;
-use cuda_sys::cudart::{
-    cudaMemset,
-};
 
 /*
 TODO:
@@ -26,18 +23,325 @@ You should be able to:
     - Is it possible to specialize this? Maybe with some clever trait work I can have 
       device_slice.copy_from(device_slice) and device_slice.copy_from(host_slice) just work.
 - Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
-    - This would be useful in transferring data to the card block-by-block.
+    - This would be useful in transferring data to the card block-by-block.*/
 
-You should also be able to:
-- Allocate and deallocate a device box
-- Copy values to and from that box
-- Convert box to and from raw pointers
-*/
+/// Sealed trait implemented by types which can be the source or destination when copying data
+/// to/from the device.
+pub trait CopyDestination<O>: ::private::private_2::Sealed {
+    /// Copy data from `source`. `source` must be the same size that `self` was allocated for.
+    ///
+    /// # Errors:
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn copy_from(&mut self, source: &O) -> CudaResult<()>;
 
-pub struct
+    /// Copy data to `dest`. `dest` must be the same size that `self` was allocated for.
+    ///
+    /// # Errors:
+    ///
+    /// If a CUDA error occurs, return the error.
+    fn copy_to(&self, dest: &mut O) -> CudaResult<()>;
+}
 
+/// A pointer type for heap-allocation in CUDA Device Memory. See the module-level-documentation
+/// for more information on device memory.
+#[derive(Debug)]
+pub struct DeviceBox<T: DeviceCopy> {
+    ptr: DevicePointer<T>,
+}
+impl<T: DeviceCopy> DeviceBox<T> {
+    /// Allocate device memory and place val into it.
+    ///
+    /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Errors:
+    ///
+    /// If a CUDA error occurs, return the error.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let five = DeviceBox::new(5).unwrap();
+    /// ```
+    pub fn new(val: &T) -> CudaResult<Self> {
+        let mut dev_box = unsafe { DeviceBox::uninit()? };
+        dev_box.copy_from(val)?;
+        Ok(dev_box)
+    }
+
+    /// Allocate device memory, but do not initialize it.
+    ///
+    /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Safety:
+    ///
+    /// Since the backing memory is not initialized, this function is not safe. The caller must
+    /// ensure that the backing memory is set to a valid value before it is read, else undefined
+    /// behavior may occur.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut five = unsafe { DeviceBox::uninit().unwrap() };
+    /// five.copy_from(&5u64).unwrap();
+    /// ```
+    pub unsafe fn uninit() -> CudaResult<Self> {
+        if mem::size_of::<T>() == 0 {
+            Ok(DeviceBox {
+                ptr: DevicePointer::null(),
+            })
+        } else {
+            let ptr = cuda_malloc(1)?;
+            Ok(DeviceBox { ptr })
+        }
+    }
+
+    /// Constructs a DeviceBox from a raw pointer.
+    ///
+    /// After calling this function, the raw pointer and the memory it points to is owned by the
+    /// DeviceBox. The DeviceBox destructor will free the allocated memory, but will not call the destructor
+    /// of `T`. This function may accept any pointer produced by the `cudaMallocManaged` CUDA API
+    /// call.
+    ///
+    /// # Safety:
+    ///
+    /// This function is unsafe because improper use may lead to memory problems. For example, a
+    /// double free may occur if this function is called twice on the same pointer, or a segfault
+    /// may occur if the pointer is not one returned by the appropriate API call.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = DeviceBox::new(5).unwrap();
+    /// let ptr = DeviceBox::into_device(x).as_raw_mut();
+    /// let x = unsafe { DeviceBox::from_raw(ptr) };
+    /// ```
+    pub unsafe fn from_raw(ptr: *mut T) -> Self {
+        DeviceBox {
+            ptr: DevicePointer::wrap(ptr),
+        }
+    }
+
+    /// Constructs a DeviceBox from a DevicePointer.
+    ///
+    /// After calling this function, the pointer and the memory it points to is owned by the
+    /// DeviceBox. The DeviceBox destructor will free the allocated memory, but will not call the destructor
+    /// of `T`. This function may accept any pointer produced by the `cudaMallocManaged` CUDA API
+    /// call, such as one taken from `DeviceBox::into_device`.
+    ///
+    /// # Safety:
+    ///
+    /// This function is unsafe because improper use may lead to memory problems. For example, a
+    /// double free may occur if this function is called twice on the same pointer, or a segfault
+    /// may occur if the pointer is not one returned by the appropriate API call.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = DeviceBox::new(5).unwrap();
+    /// let ptr = DeviceBox::into_device(x);
+    /// let x = unsafe { DeviceBox::from_device(ptr) };
+    /// ```
+    pub unsafe fn from_device(ptr: DevicePointer<T>) -> Self {
+        DeviceBox { ptr }
+    }
+
+    /// Consumes the DeviceBox, returning the wrapped DevicePointer.
+    ///
+    /// After calling this function, the caller is responsible for the memory previously managed by
+    /// the DeviceBox. In particular, the caller should properly destroy T and deallocate the memory.
+    /// The easiest way to do so is to create a new DeviceBox using the `DeviceBox::from_device` function.
+    ///
+    /// Note: This is an associated function, which means that you have to all it as
+    /// `DeviceBox::into_device(b)` instead of `b.into_device()` This is so that there is no conflict with
+    /// a method on the inner type.
+    ///
+    /// # Examples:
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let x = DeviceBox::new(5).unwrap();
+    /// let ptr = DeviceBox::into_device(x);
+    /// # unsafe { DeviceBox::from_device(ptr) };
+    /// ```
+    #[allow(wrong_self_convention)]
+    pub fn into_device(mut b: DeviceBox<T>) -> DevicePointer<T> {
+        let ptr = mem::replace(&mut b.ptr, DevicePointer::null());
+        mem::forget(b);
+        ptr
+    }
+
+    /// Consumes and leaks the DeviceBox, returning a mutable reference, &'a mut T. Note that the type T
+    /// must outlive the chosen lifetime 'a. If the type has only static references, or none at all,
+    /// this may be chosen to be 'static.
+    ///
+    /// This is mainly useful for data that lives for the remainder of the program's life. Dropping
+    /// the returned reference will cause a memory leak. If this is not acceptable, the reference
+    /// should be wrapped with the DeviceBox::from_raw function to produce a new DeviceBox. This DeviceBox can then
+    /// be dropped, which will properly destroy T and release the allocated memory.
+    ///
+    /// Note: This is an associated function, which means that you have to all it as
+    /// `DeviceBox::leak(b)` instead of `b.leak()` This is so that there is no conflict with
+    /// a method on the inner type.
+    pub fn leak<'a>(b: DeviceBox<T>) -> &'a mut T
+    where
+        T: 'a,
+    {
+        unsafe { &mut *DeviceBox::into_device(b).as_raw_mut() }
+    }
+}
+impl<T: DeviceCopy> Drop for DeviceBox<T> {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            let ptr = ::std::mem::replace(&mut self.ptr, DevicePointer::null());
+            // No choice but to panic if this fails.
+            unsafe {
+                cuda_free(ptr).expect("Failed to deallocate CUDA memory.");
+            }
+        }
+    }
+}
+impl<T: DeviceCopy> Pointer for DeviceBox<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Pointer::fmt(&self.ptr, f)
+    }
+}
+impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
+    fn copy_from(&mut self, val: &T) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    self.ptr.as_raw_mut() as *mut c_void,
+                    val as *const T as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyHostToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+
+    fn copy_to(&self, val: &mut T) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    val as *const T as *mut c_void,
+                    self.ptr.as_raw() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToHost,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+}
+impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
+    fn copy_from(&mut self, val: &DeviceBox<T>) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    self.ptr.as_raw_mut() as *mut c_void,
+                    val.ptr.as_raw() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+
+    fn copy_to(&self, val: &mut DeviceBox<T>) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    val.ptr.as_raw_mut() as *mut c_void,
+                    self.ptr.as_raw() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test_device_box {
+    use super::*;
+
+    #[derive(Clone, Debug)]
+    struct ZeroSizedType;
+    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+
+    #[test]
+    fn test_allocate_and_free_device_box() {
+        let x = DeviceBox::new(&5u64).unwrap();
+        drop(x);
+    }
+
+    #[test]
+    fn test_device_box_allocates_for_non_zst() {
+        let x = DeviceBox::new(&5u64).unwrap();
+        let ptr = DeviceBox::into_device(x);
+        assert!(!ptr.is_null());
+        let _ = unsafe { DeviceBox::from_device(ptr) };
+    }
+
+    #[test]
+    fn test_device_box_doesnt_allocate_for_zero_sized_type() {
+        let x = DeviceBox::new(&ZeroSizedType).unwrap();
+        let ptr = DeviceBox::into_device(x);
+        assert!(ptr.is_null());
+        let _ = unsafe { DeviceBox::from_device(ptr) };
+    }
+
+    #[test]
+    fn test_into_from_device() {
+        let x = DeviceBox::new(&5u64).unwrap();
+        let ptr = DeviceBox::into_device(x);
+        let _ = unsafe { DeviceBox::from_device(ptr) };
+    }
+
+    #[test]
+    fn test_copy_host_to_device() {
+        let y = 5u64;
+        let mut x = DeviceBox::new(&0u64).unwrap();
+        x.copy_from(&y).unwrap();
+        let mut z = 10u64;
+        x.copy_to(&mut z).unwrap();
+        assert_eq!(y, z);
+    }
+
+    #[test]
+    fn test_copy_device_to_host() {
+        let x = DeviceBox::new(&5u64).unwrap();
+        let mut y = 0u64;
+        x.copy_to(&mut y).unwrap();
+        assert_eq!(5, y);
+    }
+
+    #[test]
+    fn test_copy_device_to_device() {
+        let x = DeviceBox::new(&5u64).unwrap();
+        let mut y = DeviceBox::new(&0u64).unwrap();
+        let mut z = DeviceBox::new(&0u64).unwrap();
+        x.copy_to(&mut y).unwrap();
+        z.copy_from(&y).unwrap();
+
+        let mut h = 0u64;
+        z.copy_to(&mut h).unwrap();
+        assert_eq!(5, h);
+    }
+}
+
+/*
 /// Fixed-size device-side buffer. Provides basic access to device memory
-/*#[derive(Debug)]
+#[derive(Debug)]
 pub struct DeviceBuffer<T: DeviceCopy> {
     buf: DevicePointer<T>,
     capacity: usize
