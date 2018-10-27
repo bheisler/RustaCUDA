@@ -9,12 +9,8 @@ use std::fmt::{self, Display, Pointer};
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::{Deref, DerefMut};
-
-/*
-You should be able to:
-- Prefetch unified data to/from the device
-- Hash/eq/ord compare values in a UnifiedBox
-*/
+use std::slice;
+use std::ptr;
 
 /// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
 /// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
@@ -263,8 +259,219 @@ impl<T: DeviceCopy + Hash> Hash for UnifiedBox<T> {
     }
 }
 
+/// Fixed-size buffer in unified memory. See the
+/// [`module-level documentation`](../memory/index.html) for more details on unified memory.
+#[derive(Debug)]
+pub struct UnifiedBuffer<T: DeviceCopy> {
+    buf: UnifiedPointer<T>,
+    capacity: usize,
+}
+impl<T: DeviceCopy> UnifiedBuffer<T> {
+    /// Allocate a new unified buffer large enough to hold `size` `T`'s and initialized with
+    /// clones of `value`.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
+    /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
+    /// buffer[0] = 1;
+    /// ```
+    pub fn new(value: &T, size: usize) -> CudaResult<Self> {
+        unsafe {
+            let mut uninit = UnifiedBuffer::uninitialized(size)?;
+            for x in 0..size {
+                *uninit.get_unchecked_mut(x) = value.clone();
+            }
+            Ok(uninit)
+        }
+    }
+
+    /// Allocate a new unified buffer of the same size as `slice`, initialized with a clone of
+    /// the data in `slice`.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let values = [0u64; 5];
+    /// let mut buffer = UnifiedBuffer::from_slice(&values).unwrap();
+    /// buffer[0] = 1;
+    /// ```
+    pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
+        unsafe {
+            let mut uninit = UnifiedBuffer::uninitialized(slice.len())?;
+            for (i, x) in slice.iter().enumerate() {
+                *uninit.get_unchecked_mut(i) = x.clone();
+            }
+            Ok(uninit)
+        }
+    }
+
+    /// Allocate a new unified buffer large enough to hold `size` `T`'s, but without
+    /// initializing the contents.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
+    /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
+    ///
+    /// # Safety:
+    ///
+    /// The caller must ensure that the contents of the buffer are initialized before reading from
+    /// the buffer.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut buffer = unsafe { UnifiedBuffer::uninitialized(5).unwrap() };
+    /// for i in buffer.iter_mut() {
+    ///     *i = 0u64;
+    /// }
+    /// ```
+    pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
+        let bytes = size.checked_mul(mem::size_of::<T>())
+            .ok_or(CudaError::InvalidMemoryAllocation)?;
+
+        let ptr = if bytes > 0 {
+            cuda_malloc_unified(bytes)?
+        } else {
+            UnifiedPointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+        };
+        Ok(UnifiedBuffer {
+            buf: ptr,
+            capacity: size,
+        })
+    }
+
+    /// Extracts a slice containing the entire buffer.
+    ///
+    /// Equivalent to `&s[..]`.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
+    /// let sum : u64 = buffer.as_slice().iter().sum();
+    /// ```
+    pub fn as_slice(&self) -> &[T] {
+        self
+    }
+
+    /// Extracts a mutable slice of the entire buffer.
+    ///
+    /// Equivalent to `&mut s[..]`.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
+    /// for i in buffer.as_mut_slice() {
+    ///     *i = 12u64;
+    /// }
+    /// ```
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        self
+    }
+
+    /// Creates a `UnifiedBuffer<T>` directly from the raw components of another unified buffer.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// * `ptr` needs to have been previously allocated via `UnifiedBuffer` or
+    /// [`cuda_malloc_unified`](fn.cuda_malloc_unified.html).
+    /// * `ptr`'s `T` needs to have the same size and alignment as it was allocated with.
+    /// * `capacity` needs to be the capacity that the pointer was allocated with.
+    ///
+    /// Violating these may cause problems like corrupting the CUDA driver's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the
+    /// `UnifiedBuffer<T>` which may then deallocate, reallocate or change the
+    /// contents of memory pointed to by the pointer at will. Ensure
+    /// that nothing else uses the pointer after calling this
+    /// function.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use std::mem;
+    /// use rustacuda::memory::*;
+    ///
+    /// let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
+    /// let ptr = buffer.as_mut_ptr();
+    /// let size = buffer.len();
+    ///
+    /// mem::forget(buffer);
+    ///
+    /// let buffer = unsafe { UnifiedBuffer::from_raw_parts(ptr, size) };
+    /// ```
+    pub unsafe fn from_raw_parts(ptr: *mut T, size: usize) -> UnifiedBuffer<T> {
+        UnifiedBuffer {
+            buf: UnifiedPointer::wrap(ptr),
+            capacity: size,
+        }
+    }
+}
+
+impl<T: DeviceCopy> AsRef<[T]> for UnifiedBuffer<T> {
+    fn as_ref(&self) -> &[T] {
+        self
+    }
+}
+impl<T: DeviceCopy> AsMut<[T]> for UnifiedBuffer<T> {
+    fn as_mut(&mut self) -> &mut [T] {
+        self
+    }
+}
+impl<T: DeviceCopy> Deref for UnifiedBuffer<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &[T] {
+        unsafe {
+            let p = self.buf.as_raw();
+            slice::from_raw_parts(p, self.capacity)
+        }
+    }
+}
+impl<T: DeviceCopy> DerefMut for UnifiedBuffer<T> {
+    fn deref_mut(&mut self) -> &mut [T] {
+        unsafe {
+            let ptr = self.buf.as_raw_mut();
+            slice::from_raw_parts_mut(ptr, self.capacity)
+        }
+    }
+}
+impl<T: DeviceCopy> Drop for UnifiedBuffer<T> {
+    fn drop(&mut self) {
+        if self.capacity > 0 && mem::size_of::<T>() > 0 {
+            // No choice but to panic if this fails.
+            unsafe {
+                let ptr = mem::replace(&mut self.buf, UnifiedPointer::null());
+                cuda_free_unified(ptr).expect("Failed to deallocate CUDA unified memory.");
+            }
+        }
+        self.capacity = 0;
+    }
+}
+
 #[cfg(test)]
-mod test {
+mod test_unified_box {
     use super::*;
 
     #[derive(Clone, Debug)]
@@ -272,7 +479,7 @@ mod test {
     unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
 
     #[test]
-    fn test_allocate_and_free_unified_box() {
+    fn test_allocate_and_free() {
         let mut x = UnifiedBox::new(5u64).unwrap();
         *x = 10;
         assert_eq!(10, *x);
@@ -280,7 +487,7 @@ mod test {
     }
 
     #[test]
-    fn test_unified_box_allocates_for_non_zst() {
+    fn test_allocates_for_non_zst() {
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(!ptr.is_null());
@@ -288,7 +495,7 @@ mod test {
     }
 
     #[test]
-    fn test_unified_box_doesnt_allocate_for_zero_sized_type() {
+    fn test_doesnt_allocate_for_zero_sized_type() {
         let x = UnifiedBox::new(ZeroSizedType).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(ptr.is_null());
@@ -317,5 +524,61 @@ mod test {
         let y = UnifiedBox::new(2u64).unwrap();
 
         assert!(x < y);
+    }
+}
+#[cfg(test)]
+mod test_unified_buffer {
+    use super::*;
+    use std::mem;
+
+    #[derive(Clone, Debug)]
+    struct ZeroSizedType;
+    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+
+    #[test]
+    fn test_new() {
+        let val = 0u64;
+        let mut buffer = UnifiedBuffer::new(&val, 5).unwrap();
+        buffer[0] = 1;
+    }
+
+    #[test]
+    fn test_from_slice() {
+        let values = [0u64; 10];
+        let mut buffer = UnifiedBuffer::from_slice(&values).unwrap();
+        for i in buffer[0..3].iter_mut() {
+            *i = 10;
+        }
+    }
+
+    #[test]
+    fn from_raw_parts() {
+        let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
+        buffer[2] = 1;
+        let ptr = buffer.as_mut_ptr();
+        let len = buffer.len();
+        mem::forget(buffer);
+
+        let buffer = unsafe { UnifiedBuffer::from_raw_parts(ptr, len) };
+        assert_eq!(&[0u64, 0, 1, 0, 0], buffer.as_slice());
+        drop(buffer);
+    }
+
+    #[test]
+    fn zero_length_buffer() {
+        let buffer = UnifiedBuffer::new(&0u64, 0).unwrap();
+        drop(buffer);
+    }
+
+    #[test]
+    fn zero_size_type() {
+        let buffer = UnifiedBuffer::new(&ZeroSizedType, 10).unwrap();
+        drop(buffer);
+    }
+
+    #[test]
+    fn overflows_usize() {
+        let err = UnifiedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
+        assert_eq!(CudaError::InvalidMemoryAllocation, err);
     }
 }

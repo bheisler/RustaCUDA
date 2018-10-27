@@ -116,7 +116,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
         self
     }
 
-    /// Extracts a mutable slice of the entire vector.
+    /// Extracts a mutable slice of the entire buffer.
     ///
     /// Equivalent to `&mut s[..]`.
     ///
