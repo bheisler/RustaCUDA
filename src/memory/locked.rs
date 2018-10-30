@@ -6,8 +6,10 @@ use std::ops;
 use std::ptr;
 use std::slice;
 
-/// Fixed-size host-side buffer in page-locked memory. See the
-/// [`module-level documentation`](../memory/index.html) for more details on page-locked memory.
+/// Fixed-size host-side buffer in page-locked memory.
+///
+/// See the [`module-level documentation`](../memory/index.html) for more details on page-locked
+/// memory.
 #[derive(Debug)]
 pub struct LockedBuffer<T: DeviceCopy> {
     buf: *mut T,
@@ -87,7 +89,8 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size.checked_mul(mem::size_of::<T>())
+        let bytes = size
+            .checked_mul(mem::size_of::<T>())
             .ok_or(CudaError::InvalidMemoryAllocation)?;
 
         let ptr: *mut T = if bytes > 0 {

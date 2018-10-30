@@ -3,9 +3,15 @@ use std::ptr;
 
 /// A pointer to device memory.
 ///
-/// DevicePointer cannot be dereferenced by the CPU, as it is a pointer to a memory allocation in
+/// `DevicePointer` cannot be dereferenced by the CPU, as it is a pointer to a memory allocation in
 /// the device. It can be safely copied to the device (eg. as part of a kernel launch) and either
 /// unwrapped or transmuted to an appropriate pointer.
+///
+/// `DevicePointer` is guaranteed to have an equivalent internal representation to a raw pointer.
+/// Thus, it can be safely reinterpreted or transmuted to `*mut T`. It is safe to pass a
+/// `DevicePointer` through an FFI boundary to C code expecting a `*mut T`, so long as the code on
+/// the other side of that boundary does not attempt to dereference the pointer on the CPU. It is
+/// thus possible to pass a `DevicePointer` to a CUDA kernel written in C.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct DevicePointer<T: DeviceCopy>(*mut T);
@@ -314,9 +320,14 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
 
 /// A pointer to unified memory.
 ///
-/// UnifiedPointer can be safely dereferenced by the CPU, as the memory allocation it points to is
+/// `UnifiedPointer` can be safely dereferenced by the CPU, as the memory allocation it points to is
 /// shared between the CPU and the GPU. It can also be safely copied to the device (eg. as part of
 /// a kernel launch).
+///
+/// `UnifiedPointer` is guaranteed to have an equivalent internal representation to a raw pointer.
+/// Thus, it can be safely reinterpreted or transmuted to `*mut T`. It is also safe to pass a
+/// `UnifiedPointer` through an FFI boundary to C code expecting a `*mut T`. It is
+/// thus possible to pass a `UnifiedPointer` to a CUDA kernel written in C.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct UnifiedPointer<T: DeviceCopy>(*mut T);

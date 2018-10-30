@@ -45,6 +45,22 @@
 //! However, since the OS cannot page out page-locked memory, excessive use can slow down the entire
 //! system (including other processes) as physical RAM is tied up.  Therefore, page-locked memory
 //! should be used sparingly.
+//!
+//! # FFI Information
+//!
+//! The internal representations of `DevicePointer<T>` and `UnifiedPointer<T>` are guaranteed to be
+//! the same as `*mut T` and they can be safely passed through an FFI boundary to code expecting
+//! raw pointers (though keep in mind that device-only pointers cannot be dereferenced on the CPU).
+//! This is important when launching kernels written in C.
+//!
+//! As with regular Rust, all other types (eg. `DeviceBuffer` or `UnifiedBox`) are not FFI-safe.
+//! Their internal representations are not guaranteed to be anything in particular, and are not
+//! guaranteed to be the same in different versions of RustaCUDA. If you need to pass them through
+//! an FFI boundary, you must convert them to FFI-safe primitives yourself. For example, with
+//! `UnifiedBuffer`, use the `as_mut_ptr()` and `len()` functions to get the primitives, and
+//! `mem::forget()` the Buffer so that it isn't Dropped. Again, as with regular Rust, the caller is
+//! responsible for reconstructing the `UnifiedBuffer` using `from_raw_parts()` and dropping it to
+//! ensure that the memory allocation is safely cleaned up.
 
 mod device;
 mod locked;

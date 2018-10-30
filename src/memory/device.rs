@@ -1,33 +1,17 @@
 use cuda_sys::cudart::*;
-use error::{CudaResult, ToResult};
+use error::{CudaError, CudaResult, ToResult};
 use memory::DeviceCopy;
 use memory::DevicePointer;
 use memory::{cuda_free, cuda_malloc};
 use std::fmt::{self, Pointer};
 use std::mem;
+use std::ops::{Deref, DerefMut};
 use std::os::raw::c_void;
-
-/*
-TODO:
-You should be able to:
-- Allocate and deallocate a device buffer
-- Copy slices to and from that buffer
-- Slice the device buffer into device-slices
-- Copy slices to and from device-slices
-- length, is_empty of slices and buffer
-- memset slices or buffers
-    - Should this be gated by some trait? Or just unsafe?
-- Split slices just like with regular slices
-- copy_host_to_device, copy_device_to_host, copy_device_to_device? Verbose...
-- device_slice.copy_from(slice), device_slice.copy_to(mut slice)
-    - Is it possible to specialize this? Maybe with some clever trait work I can have 
-      device_slice.copy_from(device_slice) and device_slice.copy_from(host_slice) just work.
-- Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
-    - This would be useful in transferring data to the card block-by-block.*/
+use std::ptr;
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// to/from the device.
-pub trait CopyDestination<O>: ::private::Sealed {
+pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
     /// Copy data from `source`. `source` must be the same size that `self` was allocated for.
     ///
     /// # Errors:
@@ -320,77 +304,157 @@ mod test_device_box {
     }
 }
 
-/*
-/// Fixed-size device-side buffer. Provides basic access to device memory
+/// Fixed-size device-side slice.
+#[derive(Debug)]
+#[repr(C)]
+pub struct DeviceSlice<T: DeviceCopy>([T]);
+// This works by faking a regular slice out of the device raw-pointer and the length and transmuting
+// I have no idea if this is safe or not. Probably not, though I can't imagine how the compiler
+// could possibly know that the pointer is not de-referenceable. I'm banking that we get proper
+// Dynamicaly-sized Types before the compiler authors break this assumption.
+
+impl<T: DeviceCopy> DeviceSlice<T> {
+    /// Returns the number of elements in the slice.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let a = DeviceBuffer::from_slice(&[1, 2, 3]).unwrap();
+    /// assert_eq!(a.len(), 3);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns `true` if the slice has a length of 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let a = unsafe { DeviceBuffer::uninitialized(0).unwrap() };
+    /// assert!(a.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    /// Return a raw device-pointer to the slice's buffer.
+    ///
+    /// The caller must ensure that the slice outlives the pointer this function returns, or else
+    /// it will end up pointing to garbage. The caller must also ensure that the pointer is not
+    /// dereferenced by the CPU.
+    ///
+    /// Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let a = DeviceBuffer::from_slice(&[1, 2, 3]).unwrap();
+    /// println!("{:P}", a.as_ptr());
+    /// ```
+    pub fn as_ptr(&self) -> *const T {
+        self.0.as_ptr()
+    }
+
+    /// Returns an unsafe mutable device-pointer to the slice's buffer.
+    ///
+    /// The caller must ensure that the slice outlives the pointer this function returns, or else
+    /// it will end up pointing to garbage. The caller must also ensure that the pointer is not
+    /// dereferenced by the CPU.
+    ///
+    /// Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let a = DeviceBuffer::from_slice(&[1, 2, 3]).unwrap();
+    /// println!("{:P}", a.as_mut_ptr());
+    /// ```
+    pub fn as_mut_ptr(&mut self) -> *mut T {
+        self.0.as_mut_ptr()
+    }
+}
+
+/// Fixed-size device-side buffer. Provides basic access to device memory.
 #[derive(Debug)]
 pub struct DeviceBuffer<T: DeviceCopy> {
     buf: DevicePointer<T>,
-    capacity: usize
+    capacity: usize,
 }
-
 impl<T: DeviceCopy> DeviceBuffer<T> {
-    /// Create a new DeviceBuffer and fill it with zeroes.
-    pub fn zeroed(size: usize) -> CudaResult<Self> {
-        let mut uninitialized = unsafe { DeviceBuffer::uninitialized(size)? };
-        uninitialized.memset(0);
-        Ok(uninitialized)
-    }
-
-    /// Create a new DeviceBuffer with the same size as the given slice, and copy the values into 
-    /// it.
+    /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
+    /// the data in `slice`.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let values = [0u64; 5];
+    /// let mut buffer = DeviceBuffer::from_slice(&values).unwrap();
+    /// ```
     pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
-        let mut uninitialized = { DeviceBuffer::uninitialized(slice.len())? };
-        uninitialized.copy_from(slice);
-        Ok(uninitialized)
+        unsafe {
+            let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
+            uninit.copy_from(slice).unwrap();
+            Ok(uninit)
+        }
     }
 
-    /// Create a new DeviceBuffer without initializing the allocated memory. The caller is
-    /// responsible for ensuring that the allocated buffer is initialized.
+    /// Allocate a new device buffer large enough to hold `size` `T`'s, but without
+    /// initializing the contents.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
+    /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
+    ///
+    /// # Safety:
+    ///
+    /// The caller must ensure that the contents of the buffer are initialized before reading from
+    /// the buffer.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut buffer = unsafe { DeviceBuffer::uninitialized(5).unwrap() };
+    /// buffer.copy_from(&[0u64, 1, 2, 3, 4]).unwrap();
+    /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size.checked_mul(mem::size_of::<T>()).ok_or(CudaError::InvalidMemoryAllocation)?;
+        let bytes = size
+            .checked_mul(mem::size_of::<T>())
+            .ok_or(CudaError::InvalidMemoryAllocation)?;
 
-        let mut ptr = cuda_malloc(bytes)?;
-        Ok(DeviceBuffer{ buf : ptr, capacity: size })
-    }
-
-    /// Extracts a slice containing the entire buffer.
-    ///
-    /// Equivalent to `&s[..]`.
-    pub fn as_slice(&self) -> DeviceSlice<T> {
-        self
-    }
-
-    /// Extracts a mutable slice of the entire vector.
-    ///
-    /// Equivalent to `&mut s[..]`.
-    pub fn as_mut_slice(&mut self) -> DeviceSliceMut<T> {
-        self
-    }
-
-    /// Creates a `DeviceBuffer<T>` directly from the raw components of another Device buffer.
-    ///
-    /// # Safety
-    ///
-    /// This is highly unsafe, due to the number of invariants that aren't
-    /// checked:
-    ///
-    /// * `ptr` needs to have been previously allocated via `DeviceBuffer<T>`
-    ///   (at least, it's highly likely to be incorrect if it wasn't).
-    /// * `ptr`'s `T` needs to have the same size and alignment as it was allocated with.
-    /// * `capacity` needs to be the capacity that the pointer was allocated with.
-    ///
-    /// Violating these may cause problems like corrupting the allocator's
-    /// internal data structures.
-    ///
-    /// The ownership of `ptr` is effectively transferred to the
-    /// `DeviceBuffer<T>` which may then deallocate, reallocate or change the
-    /// contents of memory pointed to by the pointer at will. Ensure
-    /// that nothing else uses the pointer after calling this
-    /// function.
-    pub unsafe fn from_raw_parts(ptr: *mut T, size: usize) -> DeviceBuffer<T> {
-        DeviceBuffer {
-            buf: DevicePointer::wrap(ptr),
+        let ptr = if bytes > 0 {
+            cuda_malloc(bytes)?
+        } else {
+            DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+        };
+        Ok(DeviceBuffer {
+            buf: ptr,
             capacity: size,
+        })
+    }
+}
+impl<T: DeviceCopy> Deref for DeviceBuffer<T> {
+    type Target = DeviceSlice<T>;
+
+    fn deref(&self) -> &DeviceSlice<T> {
+        unsafe {
+            &*(::std::slice::from_raw_parts(self.buf.as_raw(), self.capacity) as *const [T]
+                as *const DeviceSlice<T>)
+        }
+    }
+}
+impl<T: DeviceCopy> DerefMut for DeviceBuffer<T> {
+    fn deref_mut(&mut self) -> &mut DeviceSlice<T> {
+        unsafe {
+            &mut *(::std::slice::from_raw_parts_mut(self.buf.as_raw_mut(), self.capacity)
+                as *mut [T] as *mut DeviceSlice<T>)
         }
     }
 }
@@ -398,9 +462,96 @@ impl<T: DeviceCopy> Drop for DeviceBuffer<T> {
     fn drop(&mut self) {
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
-            cuda_free(self.buf).expect("Failed to deallocate CUDA Device memory.");
+            let ptr = ::std::mem::replace(&mut self.buf, DevicePointer::null());
+            unsafe {
+                cuda_free(ptr).expect("Failed to deallocate CUDA Device memory.");
+            }
         }
         self.capacity = 0;
     }
 }
-*/
+impl<T: DeviceCopy> CopyDestination<[T]> for DeviceBuffer<T> {
+    fn copy_from(&mut self, val: &[T]) -> CudaResult<()> {
+        if val.len() != self.len() {
+            panic!(
+                "Unable to copy {} elements from host memory to device-memory slice of length {}.",
+                self.len(),
+                val.len()
+            );
+        };
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    self.buf.as_raw_mut() as *mut c_void,
+                    val.as_ptr() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyHostToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+
+    fn copy_to(&self, val: &mut [T]) -> CudaResult<()> {
+        if val.len() != self.len() {
+            panic!(
+                "Unable to copy {} elements from device memory to host-memory slice of length {}.",
+                self.len(),
+                val.len()
+            );
+        };
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    val.as_mut_ptr() as *mut c_void,
+                    self.buf.as_raw() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToHost,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test_device_buffer {
+    use super::*;
+
+    #[derive(Clone, Debug)]
+    struct ZeroSizedType;
+    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+
+    #[test]
+    fn test_from_slice_drop() {
+        let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        drop(buf);
+    }
+
+    #[test]
+    fn test_copy_to_from_device() {
+        let start = [0u64, 1, 2, 3, 4, 5];
+        let mut end = [0u64, 0, 0, 0, 0, 0];
+        let buf = DeviceBuffer::from_slice(&start).unwrap();
+        buf.copy_to(&mut end).unwrap();
+        assert_eq!(start, end);
+    }
+
+    /*
+TODO:
+You should be able to:
+- Slice the device buffer into device-slices
+- Copy slices to and from device-slices
+- memset slices or buffers
+    - Should this be gated by some trait? Or just unsafe?
+- Split slices just like with regular slices
+- copy_host_to_device, copy_device_to_host, copy_device_to_device? Verbose...
+- device_slice.copy_from(slice), device_slice.copy_to(mut slice)
+    - Is it possible to specialize this? Maybe with some clever trait work I can have 
+      device_slice.copy_from(device_slice) and device_slice.copy_from(host_slice) just work.
+- Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
+    - This would be useful in transferring data to the card block-by-block.
+    */
+}
