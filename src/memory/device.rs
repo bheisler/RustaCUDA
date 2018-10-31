@@ -377,6 +377,75 @@ impl<T: DeviceCopy> DeviceSlice<T> {
         self.0.as_mut_ptr()
     }
 
+    /// Divides one DeviceSlice into two at a given index.
+    ///
+    /// The first will contain all indices from `[0, mid)` (excluding the index `mid` itself) and
+    /// the second will contain all indices from `[mid, len)` (excluding the index `len` itself).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `min > len`.
+    ///
+    /// Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+    /// let (left, right) = buf.split_at(3);
+    /// let mut left_host = [0u64, 0, 0];
+    /// let mut right_host = [0u64, 0, 0];
+    /// left.copy_to(&mut left_host).unwrap();
+    /// right.copy_to(&mut right_host).unwrap();
+    /// assert_eq!([0u64, 1, 2], left_host);
+    /// assert_eq!([3u64, 4, 5], right_host);
+    /// ```
+    pub fn split_at(&self, mid: usize) -> (&DeviceSlice<T>, &DeviceSlice<T>) {
+        let (left, right) = self.0.split_at(mid);
+        unsafe {
+            (
+                DeviceSlice::from_slice(left),
+                DeviceSlice::from_slice(right),
+            )
+        }
+    }
+
+    /// Divides one mutable DeviceSlice into two at a given index.
+    ///
+    /// The first will contain all indices from `[0, mid)` (excluding the index `mid` itself) and
+    /// the second will contain all indices from `[mid, len)` (excluding the index `len` itself).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `min > len`.
+    ///
+    /// Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut buf = DeviceBuffer::from_slice(&[0u64, 0, 0, 0, 0, 0]).unwrap();
+    ///
+    /// {
+    ///     let (left, right) = buf.split_at_mut(3);
+    ///     let left_host = [0u64, 1, 2];
+    ///     let right_host = [3u64, 4, 5];
+    ///     left.copy_from(&left_host).unwrap();
+    ///     right.copy_from(&right_host).unwrap();
+    /// }
+    ///
+    /// let mut host_full = [0u64; 6];
+    /// buf.copy_to(&mut host_full).unwrap();
+    /// assert_eq!([0u64, 1, 2, 3, 4, 5], host_full);
+    /// ```
+    pub fn split_at_mut(&mut self, mid: usize) -> (&mut DeviceSlice<T>, &mut DeviceSlice<T>) {
+        let (left, right) = self.0.split_at_mut(mid);
+        unsafe {
+            (
+                DeviceSlice::from_slice_mut(left),
+                DeviceSlice::from_slice_mut(right),
+            )
+        }
+    }
+
     /// Private function used to transmute a CPU slice (which must have the device pointer as it's
     /// buffer pointer) to a DeviceSlice. Completely unsafe.
     unsafe fn from_slice(slice: &[T]) -> &DeviceSlice<T> {
@@ -645,7 +714,6 @@ mod test_device_buffer {
     /*
 TODO:
 You should be able to:
-- Split slices just like with regular slices
 - Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
     - This would be useful in transferring data to the card block-by-block.
 */
