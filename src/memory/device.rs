@@ -13,7 +13,7 @@ use std::os::raw::c_void;
 use std::ptr;
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
-/// to/from the device.
+/// to/from the device or from one device allocation to another.
 pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
     /// Copy data from `source`. `source` must be the same size that `self` was allocated for.
     ///
@@ -419,11 +419,12 @@ impl_index!{
     RangeTo<usize>
     RangeToInclusive<usize>
 }
-impl<T: DeviceCopy> CopyDestination<[T]> for DeviceSlice<T> {
-    fn copy_from(&mut self, val: &[T]) -> CudaResult<()> {
+impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
+    fn copy_from(&mut self, val: &I) -> CudaResult<()> {
+        let val = val.as_ref();
         if val.len() != self.len() {
             panic!(
-                "Unable to copy {} elements from host memory to device-memory slice of length {}.",
+                "Unable to copy {} elements from device memory to host-memory slice of length {}.",
                 self.len(),
                 val.len()
             );
@@ -442,10 +443,11 @@ impl<T: DeviceCopy> CopyDestination<[T]> for DeviceSlice<T> {
         Ok(())
     }
 
-    fn copy_to(&self, val: &mut [T]) -> CudaResult<()> {
+    fn copy_to(&self, val: &mut I) -> CudaResult<()> {
+        let val = val.as_mut();
         if val.len() != self.len() {
             panic!(
-                "Unable to copy {} elements from device memory to host-memory slice of length {}.",
+                "Unable to copy {} elements from host memory to device-memory slice of length {}.",
                 self.len(),
                 val.len()
             );
@@ -462,6 +464,60 @@ impl<T: DeviceCopy> CopyDestination<[T]> for DeviceSlice<T> {
             }
         }
         Ok(())
+    }
+}
+impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
+    fn copy_from(&mut self, val: &DeviceSlice<T>) -> CudaResult<()> {
+        if val.len() != self.len() {
+            panic!(
+                "Unable to copy {} elements from device-memory to device-memory slice of length {}.",
+                self.len(),
+                val.len()
+            );
+        };
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    self.0.as_mut_ptr() as *mut c_void,
+                    val.as_ptr() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+
+    fn copy_to(&self, val: &mut DeviceSlice<T>) -> CudaResult<()> {
+        if val.len() != self.len() {
+            panic!(
+                "Unable to copy {} elements from device memory to device-memory slice of length {}.",
+                self.len(),
+                val.len()
+            );
+        };
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            unsafe {
+                cudaMemcpy(
+                    val.as_mut_ptr() as *mut c_void,
+                    self.as_ptr() as *const c_void,
+                    size,
+                    cudaMemcpyKind_cudaMemcpyDeviceToDevice,
+                ).toResult()?
+            }
+        }
+        Ok(())
+    }
+}
+impl<T: DeviceCopy> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
+    fn copy_from(&mut self, val: &DeviceBuffer<T>) -> CudaResult<()> {
+        self.copy_from(val as &DeviceSlice<T>)
+    }
+
+    fn copy_to(&self, val: &mut DeviceBuffer<T>) -> CudaResult<()> {
+        self.copy_to(val as &mut DeviceSlice<T>)
     }
 }
 
@@ -589,8 +645,6 @@ mod test_device_buffer {
     /*
 TODO:
 You should be able to:
-- Copy host-slices to and from device-slices
-- Copy device-slices to and from device-slices
 - Split slices just like with regular slices
 - Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
     - This would be useful in transferring data to the card block-by-block.
@@ -600,8 +654,53 @@ You should be able to:
     fn test_slice() {
         let start = [0u64, 1, 2, 3, 4, 5];
         let mut end = [0u64, 0];
-        let buf = DeviceBuffer::from_slice(&start).unwrap();
+        let mut buf = DeviceBuffer::from_slice(&[0u64, 0, 0, 0]).unwrap();
+        buf.copy_from(&start[0..4]).unwrap();
         buf[0..2].copy_to(&mut end).unwrap();
         assert_eq!(start[0..2], end);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_copy_to_d2h_wrong_size() {
+        let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        let mut end = [0u64, 1, 2, 3, 4];
+        let _ = buf.copy_to(&mut end);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_copy_from_h2d_wrong_size() {
+        let start = [0u64, 1, 2, 3, 4];
+        let mut buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        let _ = buf.copy_from(&start);
+    }
+
+    #[test]
+    fn test_copy_device_slice_to_device() {
+        let start = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        let mut mid = DeviceBuffer::from_slice(&[0u64, 0, 0, 0]).unwrap();
+        let mut end = DeviceBuffer::from_slice(&[0u64, 0]).unwrap();
+        let mut host_end = [0u64, 0];
+        start[1..5].copy_to(&mut mid).unwrap();
+        end.copy_from(&mid[1..3]).unwrap();
+        end.copy_to(&mut host_end).unwrap();
+        assert_eq!([2u64, 3], host_end);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_copy_to_d2d_wrong_size() {
+        let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        let mut end = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4]).unwrap();
+        let _ = buf.copy_to(&mut end);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_copy_from_d2d_wrong_size() {
+        let mut buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+        let start = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4]).unwrap();
+        let _ = buf.copy_from(&start);
     }
 }
