@@ -4,6 +4,7 @@ use memory::DeviceCopy;
 use memory::DevicePointer;
 use memory::{cuda_free, cuda_malloc};
 use std::fmt::{self, Pointer};
+use std::iter::{ExactSizeIterator, FusedIterator};
 use std::mem;
 use std::ops::{
     Deref, DerefMut, Index, IndexMut, Range, RangeFrom, RangeFull, RangeInclusive, RangeTo,
@@ -11,6 +12,7 @@ use std::ops::{
 };
 use std::os::raw::c_void;
 use std::ptr;
+use std::slice::{Chunks as SChunks, ChunksMut as SChunksMut};
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// to/from the device or from one device allocation to another.
@@ -446,6 +448,70 @@ impl<T: DeviceCopy> DeviceSlice<T> {
         }
     }
 
+    /// Returns an iterator over `chunk_size` elements of the slice at a time. The chunks are device
+    /// slices and do not overlap. If `chunk_size` does not divide the length of the slice, then the
+    /// last chunk will not have length `chunk_size`.
+    ///
+    /// See `exact_chunks` for a variant of this iterator that returns chunks of always exactly
+    /// `chunk_size` elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is 0.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let slice = DeviceBuffer::from_slice(&[1u64, 2, 3, 4, 5]).unwrap();
+    /// let mut iter = slice.chunks(2);
+    ///
+    /// assert_eq!(iter.next().unwrap().len(), 2);
+    ///
+    /// let mut host_buf = [0u64, 0];
+    /// iter.next().unwrap().copy_to(&mut host_buf).unwrap();
+    /// assert_eq!([3, 4], host_buf);
+    ///
+    /// assert_eq!(iter.next().unwrap().len(), 1);
+    ///
+    /// ```
+    pub fn chunks(&self, chunk_size: usize) -> Chunks<T> {
+        Chunks(self.0.chunks(chunk_size))
+    }
+
+    /// Returns an iterator over `chunk_size` elements of the slice at a time. The chunks are
+    /// mutable device slices and do not overlap. If `chunk_size` does not divide the length of the
+    /// slice, then the last chunk will not have length `chunk_size`.
+    ///
+    /// See `exact_chunks` for a variant of this iterator that returns chunks of always exactly
+    /// `chunk_size` elements.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `chunk_size` is 0.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let slice = DeviceBuffer::from_slice(&[0u64, 0, 0, 0, 0]).unwrap();
+    /// let mut iter = slice.chunks(2);
+    ///
+    /// assert_eq!(iter.next().unwrap().len(), 2);
+    ///
+    /// let host_buf = [2u64, 3];
+    /// iter.next().unwrap().copy_from(host_buf).unwrap();
+    ///
+    /// assert_eq!(iter.next().unwrap().len(), 1);
+    ///
+    /// let mut host_buf = [0u64, 0, 0, 0, 0];
+    /// slice.copy_to(&mut host_buf).unwrap();
+    /// assert_eq!([0u64, 0, 2, 3, 0], host_buf);
+    /// ```
+    pub fn chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<T> {
+        ChunksMut(self.0.chunks_mut(chunk_size))
+    }
+
     /// Private function used to transmute a CPU slice (which must have the device pointer as it's
     /// buffer pointer) to a DeviceSlice. Completely unsafe.
     unsafe fn from_slice(slice: &[T]) -> &DeviceSlice<T> {
@@ -458,6 +524,105 @@ impl<T: DeviceCopy> DeviceSlice<T> {
         &mut *(slice as *mut [T] as *mut DeviceSlice<T>)
     }
 }
+
+/// An iterator over a `DeviceSlice` in (non-overlapping) chunks (`chunk_size` elements at a time).
+///
+/// When the slice len is not evenly divided by the chunk size, the last slice of the iteration will
+/// be the remainder.
+///
+/// This struct is created by the `chunks` method on `DeviceSlices`.
+#[derive(Debug, Clone)]
+pub struct Chunks<'a, T: DeviceCopy + 'a>(SChunks<'a, T>);
+impl<'a, T: DeviceCopy> Iterator for Chunks<'a, T> {
+    type Item = &'a DeviceSlice<T>;
+
+    fn next(&mut self) -> Option<&'a DeviceSlice<T>> {
+        self.0
+            .next()
+            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.0.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.0
+            .nth(n)
+            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+    }
+
+    #[inline]
+    fn last(self) -> Option<Self::Item> {
+        self.0
+            .last()
+            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+    }
+}
+impl<'a, T: DeviceCopy> DoubleEndedIterator for Chunks<'a, T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<&'a DeviceSlice<T>> {
+        self.0
+            .next_back()
+            .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
+    }
+}
+impl<'a, T: DeviceCopy> ExactSizeIterator for Chunks<'a, T> {}
+impl<'a, T: DeviceCopy> FusedIterator for Chunks<'a, T> {}
+
+/// An iterator over a `DeviceSlice` in (non-overlapping) mutable chunks (`chunk_size` elements at
+/// a time).
+///
+/// When the slice len is not evenly divided by the chunk size, the last slice of the iteration will
+/// be the remainder.
+///
+/// This struct is created by the `chunks` method on `DeviceSlices`.
+#[derive(Debug)]
+pub struct ChunksMut<'a, T: DeviceCopy + 'a>(SChunksMut<'a, T>);
+impl<'a, T: DeviceCopy> Iterator for ChunksMut<'a, T> {
+    type Item = &'a mut DeviceSlice<T>;
+
+    fn next(&mut self) -> Option<&'a mut DeviceSlice<T>> {
+        self.0
+            .next()
+            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.0.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.0.len()
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.0
+            .nth(n)
+            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+    }
+
+    #[inline]
+    fn last(self) -> Option<Self::Item> {
+        self.0
+            .last()
+            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+    }
+}
+impl<'a, T: DeviceCopy> DoubleEndedIterator for ChunksMut<'a, T> {
+    #[inline]
+    fn next_back(&mut self) -> Option<&'a mut DeviceSlice<T>> {
+        self.0
+            .next_back()
+            .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
+    }
+}
+impl<'a, T: DeviceCopy> ExactSizeIterator for ChunksMut<'a, T> {}
+impl<'a, T: DeviceCopy> FusedIterator for ChunksMut<'a, T> {}
 
 macro_rules! impl_index {
     ($($t:ty)*) => {
@@ -710,13 +875,6 @@ mod test_device_buffer {
         buf.copy_to(&mut end).unwrap();
         assert_eq!(start, end);
     }
-
-    /*
-TODO:
-You should be able to:
-- Iterate over chunks/chunks_mut/exact_chunks/exact_chunks_mut of a buffer or slice
-    - This would be useful in transferring data to the card block-by-block.
-*/
 
     #[test]
     fn test_slice() {
