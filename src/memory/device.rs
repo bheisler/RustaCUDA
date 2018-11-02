@@ -656,13 +656,10 @@ impl_index!{
 impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
         let val = val.as_ref();
-        if val.len() != self.len() {
-            panic!(
-                "Unable to copy {} elements from device memory to host-memory slice of length {}.",
-                self.len(),
-                val.len()
-            );
-        };
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
@@ -679,13 +676,10 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
 
     fn copy_to(&self, val: &mut I) -> CudaResult<()> {
         let val = val.as_mut();
-        if val.len() != self.len() {
-            panic!(
-                "Unable to copy {} elements from host memory to device-memory slice of length {}.",
-                self.len(),
-                val.len()
-            );
-        };
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
@@ -702,13 +696,10 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
 }
 impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &DeviceSlice<T>) -> CudaResult<()> {
-        if val.len() != self.len() {
-            panic!(
-                "Unable to copy {} elements from device-memory to device-memory slice of length {}.",
-                self.len(),
-                val.len()
-            );
-        };
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
@@ -724,13 +715,10 @@ impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
     }
 
     fn copy_to(&self, val: &mut DeviceSlice<T>) -> CudaResult<()> {
-        if val.len() != self.len() {
-            panic!(
-                "Unable to copy {} elements from device memory to device-memory slice of length {}.",
-                self.len(),
-                val.len()
-            );
-        };
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
         let size = mem::size_of::<T>() * self.len();
         if size != 0 {
             unsafe {
