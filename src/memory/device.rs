@@ -494,15 +494,17 @@ impl<T: DeviceCopy> DeviceSlice<T> {
     ///
     /// ```
     /// use rustacuda::memory::*;
-    /// let slice = DeviceBuffer::from_slice(&[0u64, 0, 0, 0, 0]).unwrap();
-    /// let mut iter = slice.chunks(2);
+    /// let mut slice = DeviceBuffer::from_slice(&[0u64, 0, 0, 0, 0]).unwrap();
+    /// {
+    ///     let mut iter = slice.chunks_mut(2);
     ///
-    /// assert_eq!(iter.next().unwrap().len(), 2);
+    ///     assert_eq!(iter.next().unwrap().len(), 2);
     ///
-    /// let host_buf = [2u64, 3];
-    /// iter.next().unwrap().copy_from(host_buf).unwrap();
+    ///     let host_buf = [2u64, 3];
+    ///     iter.next().unwrap().copy_from(&host_buf).unwrap();
     ///
-    /// assert_eq!(iter.next().unwrap().len(), 1);
+    ///     assert_eq!(iter.next().unwrap().len(), 1);
+    /// }
     ///
     /// let mut host_buf = [0u64, 0, 0, 0, 0];
     /// slice.copy_to(&mut host_buf).unwrap();
