@@ -8,18 +8,21 @@
 //! Device memory is just what it sounds like - memory allocated on the device. Device memory
 //! cannot be accessed from the host directly, but data can be copied to and from the device.
 //! RustaCUDA exposes device memory through the [`DeviceBox`](struct.Devicebox.html) and
-//! [`DeviceBuffer`](struct.DeviceBuffer.html) structures, and pointers to device memory are
-//! represented by [`DevicePointer`](struct.DevicePointer.html).
+//! [`DeviceBuffer`](struct.DeviceBuffer.html) structures. Pointers to device memory are
+//! represented by [`DevicePointer`](struct.DevicePointer.html), while slices in device memory are
+//! represented by [`DeviceSlice`](struct.DeviceSlice.html).
 //!
 //! # Unified Memory
 //!
 //! Unified memory is a memory allocation which can be read from and written to by both the host
 //! and the device. When the host (or device) attempts to access a page of unified memory, it is
-//! seamlessly transferred from CPU RAM to GPU RAM or vice versa. The programmer may also choose to
-//! explicitly prefetch data to one side or another. RustaCUDA exposes unified memory through the
+//! seamlessly transferred from host RAM to device RAM or vice versa. The programmer may also
+//! choose to explicitly prefetch data to one side or another (though this is not currently exposed
+//! through RustaCUDA). RustaCUDA exposes unified memory through the
 //! [`UnifiedBox`](struct.UnifiedBox.html) and [`UnifiedBuffer`](struct.UnifiedBuffer.html)
 //! structures, and pointers to unified memory are represented by
-//! [`UnifiedPointer`](struct.UnifiedPointer.html).
+//! [`UnifiedPointer`](struct.UnifiedPointer.html). Since unified memory is accessible to the host,
+//! slices in unified memory are represented by normal Rust slices.
 //!
 //! Unified memory is generally easier to use than device memory, but there are drawbacks. It is
 //! possible to allocate more memory than is available on the card, and this can result in very slow
@@ -57,8 +60,8 @@
 //! Their internal representations are not guaranteed to be anything in particular, and are not
 //! guaranteed to be the same in different versions of RustaCUDA. If you need to pass them through
 //! an FFI boundary, you must convert them to FFI-safe primitives yourself. For example, with
-//! `UnifiedBuffer`, use the `as_mut_ptr()` and `len()` functions to get the primitives, and
-//! `mem::forget()` the Buffer so that it isn't Dropped. Again, as with regular Rust, the caller is
+//! `UnifiedBuffer`, use the `as_unified_ptr()` and `len()` functions to get the primitives, and
+//! `mem::forget()` the Buffer so that it isn't dropped. Again, as with regular Rust, the caller is
 //! responsible for reconstructing the `UnifiedBuffer` using `from_raw_parts()` and dropping it to
 //! ensure that the memory allocation is safely cleaned up.
 

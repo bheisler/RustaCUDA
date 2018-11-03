@@ -9,12 +9,14 @@ use std::fmt::{self, Display, Pointer};
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::ops::{Deref, DerefMut};
-use std::slice;
 use std::ptr;
+use std::slice;
 
-/// A pointer type for heap-allocation in CUDA Unified Memory. See the module-level-documentation
-/// for more information on unified memory. Should behave equivalently to std::boxed::Box, except
-/// that the allocated memory can be seamlessly shared between host and device.
+/// A pointer type for heap-allocation in CUDA unified memory.
+///
+/// See the [`module-level documentation`](../memory/index.html) for more information on unified
+/// memory. Should behave equivalently to `std::boxed::Box`, except that the allocated memory can be
+/// seamlessly shared between host and device.
 #[derive(Debug)]
 pub struct UnifiedBox<T: DeviceCopy> {
     ptr: UnifiedPointer<T>,
@@ -259,8 +261,9 @@ impl<T: DeviceCopy + Hash> Hash for UnifiedBox<T> {
     }
 }
 
-/// Fixed-size buffer in unified memory. See the
-/// [`module-level documentation`](../memory/index.html) for more details on unified memory.
+/// Fixed-size buffer in unified memory.
+///
+/// See the [`module-level documentation`](../memory/index.html) for more details on unified memory.
 #[derive(Debug)]
 pub struct UnifiedBuffer<T: DeviceCopy> {
     buf: UnifiedPointer<T>,
@@ -340,7 +343,8 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size.checked_mul(mem::size_of::<T>())
+        let bytes = size
+            .checked_mul(mem::size_of::<T>())
             .ok_or(CudaError::InvalidMemoryAllocation)?;
 
         let ptr = if bytes > 0 {
@@ -386,6 +390,18 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
         self
     }
 
+    /// Returns a `UnifiedPointer<T>` to the buffer.
+    ///
+    /// The caller must ensure that the buffer outlives the returned pointer, or it will end up
+    /// pointing to garbage.
+    ///
+    /// Modifying the buffer is guaranteed not to cause its buffer to be reallocated, so pointers
+    /// cannot be invalidated in that manner, but other types may be added in the future which can
+    /// reallocate.
+    pub fn as_unified_ptr(&mut self) -> UnifiedPointer<T> {
+        self.buf.clone()
+    }
+
     /// Creates a `UnifiedBuffer<T>` directly from the raw components of another unified buffer.
     ///
     /// # Safety
@@ -414,18 +430,15 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// use rustacuda::memory::*;
     ///
     /// let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
-    /// let ptr = buffer.as_mut_ptr();
+    /// let ptr = buffer.as_unified_ptr();
     /// let size = buffer.len();
     ///
     /// mem::forget(buffer);
     ///
     /// let buffer = unsafe { UnifiedBuffer::from_raw_parts(ptr, size) };
     /// ```
-    pub unsafe fn from_raw_parts(ptr: *mut T, size: usize) -> UnifiedBuffer<T> {
-        UnifiedBuffer {
-            buf: UnifiedPointer::wrap(ptr),
-            capacity: size,
-        }
+    pub unsafe fn from_raw_parts(ptr: UnifiedPointer<T>, capacity: usize) -> UnifiedBuffer<T> {
+        UnifiedBuffer { buf: ptr, capacity }
     }
 }
 
@@ -555,7 +568,7 @@ mod test_unified_buffer {
     fn from_raw_parts() {
         let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
         buffer[2] = 1;
-        let ptr = buffer.as_mut_ptr();
+        let ptr = buffer.as_unified_ptr();
         let len = buffer.len();
         mem::forget(buffer);
 

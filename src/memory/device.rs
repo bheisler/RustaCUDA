@@ -12,19 +12,19 @@ use std::ops::{
 };
 use std::os::raw::c_void;
 use std::ptr;
-use std::slice::{Chunks as SChunks, ChunksMut as SChunksMut};
+use std::slice::{self, Chunks, ChunksMut};
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// to/from the device or from one device allocation to another.
 pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
-    /// Copy data from `source`. `source` must be the same size that `self` was allocated for.
+    /// Copy data from `source`. `source` must be the same size as `self`.
     ///
     /// # Errors:
     ///
     /// If a CUDA error occurs, return the error.
     fn copy_from(&mut self, source: &O) -> CudaResult<()>;
 
-    /// Copy data to `dest`. `dest` must be the same size that `self` was allocated for.
+    /// Copy data to `dest`. `dest` must be the same size as `self`.
     ///
     /// # Errors:
     ///
@@ -32,8 +32,9 @@ pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
     fn copy_to(&self, dest: &mut O) -> CudaResult<()>;
 }
 
-/// A pointer type for heap-allocation in CUDA Device Memory. See the module-level-documentation
-/// for more information on device memory.
+/// A pointer type for heap-allocation in CUDA device memory.
+///
+/// See the [`module-level documentation`](../memory/index.html) for more information on device memory.
 #[derive(Debug)]
 pub struct DeviceBox<T: DeviceCopy> {
     ptr: DevicePointer<T>,
@@ -475,8 +476,8 @@ impl<T: DeviceCopy> DeviceSlice<T> {
     /// assert_eq!(iter.next().unwrap().len(), 1);
     ///
     /// ```
-    pub fn chunks(&self, chunk_size: usize) -> Chunks<T> {
-        Chunks(self.0.chunks(chunk_size))
+    pub fn chunks(&self, chunk_size: usize) -> DeviceChunks<T> {
+        DeviceChunks(self.0.chunks(chunk_size))
     }
 
     /// Returns an iterator over `chunk_size` elements of the slice at a time. The chunks are
@@ -510,8 +511,8 @@ impl<T: DeviceCopy> DeviceSlice<T> {
     /// slice.copy_to(&mut host_buf).unwrap();
     /// assert_eq!([0u64, 0, 2, 3, 0], host_buf);
     /// ```
-    pub fn chunks_mut(&mut self, chunk_size: usize) -> ChunksMut<T> {
-        ChunksMut(self.0.chunks_mut(chunk_size))
+    pub fn chunks_mut(&mut self, chunk_size: usize) -> DeviceChunksMut<T> {
+        DeviceChunksMut(self.0.chunks_mut(chunk_size))
     }
 
     /// Private function used to transmute a CPU slice (which must have the device pointer as it's
@@ -525,17 +526,78 @@ impl<T: DeviceCopy> DeviceSlice<T> {
     unsafe fn from_slice_mut(slice: &mut [T]) -> &mut DeviceSlice<T> {
         &mut *(slice as *mut [T] as *mut DeviceSlice<T>)
     }
+
+    /// Returns a `DevicePointer<T>` to the buffer.
+    ///
+    /// The caller must ensure that the buffer outlives the returned pointer, or it will end up
+    /// pointing to garbage.
+    ///
+    /// Modifying `DeviceBuffer` is guaranteed not to cause its buffer to be reallocated, so pointers
+    /// cannot be invalidated in that manner, but other types may be added in the future which can
+    /// reallocate.
+    pub fn as_device_ptr(&mut self) -> DevicePointer<T> {
+        unsafe { DevicePointer::wrap(self.0.as_mut_ptr()) }
+    }
+
+    /// Forms a slice from a `DevicePointer` and a length.
+    ///
+    /// The `len` argument is the number of _elements_, not the number of bytes.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe as there is no guarantee that the given pointer is valid for `len`
+    /// elements, nor whether the lifetime inferred is a suitable lifetime for the returned slice.
+    ///
+    /// # Caveat
+    ///
+    /// The lifetime for the returned slice is inferred from its usage. To prevent accidental misuse,
+    /// it's suggested to tie the lifetime to whatever source lifetime is safe in the context, such
+    /// as by providing a helper function taking the lifetime of a host value for the slice or
+    /// by explicit annotation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rustacuda::memory::*;
+    /// let mut x = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
+    /// // Manually slice the buffer (this is not recommended!)
+    /// let ptr = unsafe { x.as_device_ptr().offset(1) };
+    /// let slice = unsafe { DeviceSlice::from_raw_parts(ptr, 2) };
+    /// let mut host_buf = [0u64, 0];
+    /// slice.copy_to(&mut host_buf).unwrap();
+    /// assert_eq!([1u64, 2], host_buf);
+    /// ```
+    #[allow(needless_pass_by_value)]
+    pub unsafe fn from_raw_parts<'a>(data: DevicePointer<T>, len: usize) -> &'a DeviceSlice<T> {
+        DeviceSlice::from_slice(slice::from_raw_parts(data.as_raw(), len))
+    }
+
+    /// Performs the same functionality as `from_raw_parts`, except that a
+    /// mutable slice is returned.
+    ///
+    /// This function is unsafe for the same reasons as `from_raw_parts`, as well
+    /// as not being able to provide a non-aliasing guarantee of the returned
+    /// mutable slice. `data` must be non-null and aligned even for zero-length
+    /// slices as with `from_raw_parts`. See the documentation of
+    /// `from_raw_parts` for more details.
+    pub unsafe fn from_raw_parts_mut<'a>(
+        mut data: DevicePointer<T>,
+        len: usize,
+    ) -> &'a mut DeviceSlice<T> {
+        DeviceSlice::from_slice_mut(slice::from_raw_parts_mut(data.as_raw_mut(), len))
+    }
 }
 
-/// An iterator over a `DeviceSlice` in (non-overlapping) chunks (`chunk_size` elements at a time).
+/// An iterator over a [`DeviceSlice`](struct.DeviceSlice.html) in (non-overlapping) chunks
+/// (`chunk_size` elements at a time).
 ///
 /// When the slice len is not evenly divided by the chunk size, the last slice of the iteration will
 /// be the remainder.
 ///
 /// This struct is created by the `chunks` method on `DeviceSlices`.
 #[derive(Debug, Clone)]
-pub struct Chunks<'a, T: DeviceCopy + 'a>(SChunks<'a, T>);
-impl<'a, T: DeviceCopy> Iterator for Chunks<'a, T> {
+pub struct DeviceChunks<'a, T: DeviceCopy + 'a>(Chunks<'a, T>);
+impl<'a, T: DeviceCopy> Iterator for DeviceChunks<'a, T> {
     type Item = &'a DeviceSlice<T>;
 
     fn next(&mut self) -> Option<&'a DeviceSlice<T>> {
@@ -565,7 +627,7 @@ impl<'a, T: DeviceCopy> Iterator for Chunks<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
     }
 }
-impl<'a, T: DeviceCopy> DoubleEndedIterator for Chunks<'a, T> {
+impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunks<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a DeviceSlice<T>> {
         self.0
@@ -573,19 +635,19 @@ impl<'a, T: DeviceCopy> DoubleEndedIterator for Chunks<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
     }
 }
-impl<'a, T: DeviceCopy> ExactSizeIterator for Chunks<'a, T> {}
-impl<'a, T: DeviceCopy> FusedIterator for Chunks<'a, T> {}
+impl<'a, T: DeviceCopy> ExactSizeIterator for DeviceChunks<'a, T> {}
+impl<'a, T: DeviceCopy> FusedIterator for DeviceChunks<'a, T> {}
 
-/// An iterator over a `DeviceSlice` in (non-overlapping) mutable chunks (`chunk_size` elements at
-/// a time).
+/// An iterator over a [`DeviceSlice`](struct.DeviceSlice.html) in (non-overlapping) mutable chunks
+/// (`chunk_size` elements at a time).
 ///
 /// When the slice len is not evenly divided by the chunk size, the last slice of the iteration will
 /// be the remainder.
 ///
 /// This struct is created by the `chunks` method on `DeviceSlices`.
 #[derive(Debug)]
-pub struct ChunksMut<'a, T: DeviceCopy + 'a>(SChunksMut<'a, T>);
-impl<'a, T: DeviceCopy> Iterator for ChunksMut<'a, T> {
+pub struct DeviceChunksMut<'a, T: DeviceCopy + 'a>(ChunksMut<'a, T>);
+impl<'a, T: DeviceCopy> Iterator for DeviceChunksMut<'a, T> {
     type Item = &'a mut DeviceSlice<T>;
 
     fn next(&mut self) -> Option<&'a mut DeviceSlice<T>> {
@@ -615,7 +677,7 @@ impl<'a, T: DeviceCopy> Iterator for ChunksMut<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
     }
 }
-impl<'a, T: DeviceCopy> DoubleEndedIterator for ChunksMut<'a, T> {
+impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunksMut<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a mut DeviceSlice<T>> {
         self.0
@@ -623,8 +685,8 @@ impl<'a, T: DeviceCopy> DoubleEndedIterator for ChunksMut<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
     }
 }
-impl<'a, T: DeviceCopy> ExactSizeIterator for ChunksMut<'a, T> {}
-impl<'a, T: DeviceCopy> FusedIterator for ChunksMut<'a, T> {}
+impl<'a, T: DeviceCopy> ExactSizeIterator for DeviceChunksMut<'a, T> {}
+impl<'a, T: DeviceCopy> FusedIterator for DeviceChunksMut<'a, T> {}
 
 macro_rules! impl_index {
     ($($t:ty)*) => {
@@ -808,6 +870,45 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
             buf: ptr,
             capacity: size,
         })
+    }
+
+    /// Creates a `DeviceBuffer<T>` directly from the raw components of another device buffer.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't
+    /// checked:
+    ///
+    /// * `ptr` needs to have been previously allocated via `DeviceBuffer` or
+    /// [`cuda_malloc`](fn.cuda_malloc.html).
+    /// * `ptr`'s `T` needs to have the same size and alignment as it was allocated with.
+    /// * `capacity` needs to be the capacity that the pointer was allocated with.
+    ///
+    /// Violating these may cause problems like corrupting the CUDA driver's
+    /// internal data structures.
+    ///
+    /// The ownership of `ptr` is effectively transferred to the
+    /// `DeviceBuffer<T>` which may then deallocate, reallocate or change the
+    /// contents of memory pointed to by the pointer at will. Ensure
+    /// that nothing else uses the pointer after calling this
+    /// function.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// use std::mem;
+    /// use rustacuda::memory::*;
+    ///
+    /// let mut buffer = DeviceBuffer::from_slice(&[0u64; 5]).unwrap();
+    /// let ptr = buffer.as_device_ptr();
+    /// let size = buffer.len();
+    ///
+    /// mem::forget(buffer);
+    ///
+    /// let buffer = unsafe { DeviceBuffer::from_raw_parts(ptr, size) };
+    /// ```
+    pub unsafe fn from_raw_parts(ptr: DevicePointer<T>, capacity: usize) -> DeviceBuffer<T> {
+        DeviceBuffer { buf: ptr, capacity }
     }
 }
 impl<T: DeviceCopy> Deref for DeviceBuffer<T> {
