@@ -91,18 +91,36 @@ use std::num::*;
 /// There are two ways to implement DeviceCopy on your type. The simplest is to use `derive`:
 ///
 /// ```
-/// // TODO: Implement this.
+/// #[macro_use]
+/// extern crate rustacuda_macros;
+/// extern crate rustacuda;
+///
+/// #[derive(Clone, DeviceCopy)]
+/// struct MyStruct(u64);
+///
+/// # fn main() {}
 /// ```
 ///
-/// You can also implement `DeviceCopy` manually:
+/// This is safe because the `DeviceCopy` derive macro will check that all fields of the struct,
+/// enum or union implement `DeviceCopy`. For example, this fails to compile, because `Vec` cannot
+/// be copied to the device:
+///
+/// ```compile_fail
+/// # #[macro_use]
+/// # extern crate rustacuda_macros;
+/// # extern crate rustacuda;
+/// #[derive(Clone, DeviceCopy)]
+/// struct MyStruct(Vec<u64>);
+/// # fn main() {}
+/// ```
+///
+/// You can also implement `DeviceCopy` unsafely:
 ///
 /// ```
 /// use rustacuda::memory::DeviceCopy;
 ///
 /// #[derive(Clone)]
-/// struct MyStruct{
-///     x: u8
-/// }
+/// struct MyStruct(u64);
 ///
 /// unsafe impl DeviceCopy for MyStruct { }
 /// ```
