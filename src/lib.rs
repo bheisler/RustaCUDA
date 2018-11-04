@@ -15,3 +15,5 @@ extern crate cuda_sys;
 pub mod error;
 pub mod memory;
 pub(crate) mod private;
+
+mod derive_compile_fail;

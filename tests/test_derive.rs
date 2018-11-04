@@ -48,32 +48,6 @@ union TestUnion {
     i: i64,
 }
 
-/*#[derive(Clone, DeviceCopy)]
-struct ShouldFailTuple(Vec<u64>);
-
-#[derive(Clone, DeviceCopy)]
-struct ShouldFailStruct {
-    x: Vec<u64>,
-}
-
-#[derive(Clone, DeviceCopy)]
-enum ShouldFailTupleEnum {
-    Unit,
-    Tuple(Vec<u64>),
-}
-
-#[derive(Clone, DeviceCopy)]
-enum ShouldFailStructEnum {
-    Unit,
-    Struct { v: Vec<u64> },
-}
-
-#[derive(Copy, Clone, DeviceCopy)]
-union ShouldFailUnion {
-    u: *const u64,
-    o: *const i64,
-}*/
-
 #[test]
 fn test_hidden_functions() {
     __verify_ZeroSizedStruct_can_implement_DeviceCopy(&ZeroSizedStruct);

@@ -44,6 +44,7 @@ fn impl_device_copy(input: &DeriveInput) -> TokenStream {
         #[doc(hidden)]
         #[allow(all)]
         fn #type_test_func_ident#impl_generics(value: &#input_type#type_generics) #where_clause {
+            fn assert_impl<T: ::rustacuda::memory::DeviceCopy>() {}
             #check_types_code
         }
     };
@@ -114,11 +115,6 @@ fn check_fields(fields: &Vec<&Field>) -> Vec<TokenStream> {
         .iter()
         .map(|field| {
             let field_type = &field.ty;
-            quote!{
-                {
-                    fn assert_impl<T: ::rustacuda::memory::DeviceCopy>() {}
-                    assert_impl::<#field_type>();
-                }
-            }
+            quote!{assert_impl::<#field_type>();}
         }).collect()
 }
