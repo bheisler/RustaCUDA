@@ -5,6 +5,7 @@ authors = ["Brook Heisler <redattack34@gmail.com>"]
 
 [dependencies]
 cuda-sys = "0.2"
+bitflags = "1.0"
 
 [dev-dependencies]
 rustacuda_macros = { version = "0.1.0", path = "rustacuda_macros" }
