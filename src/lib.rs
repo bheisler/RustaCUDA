@@ -19,20 +19,22 @@ pub mod memory;
 pub(crate) mod private;
 
 mod derive_compile_fail;
+mod device;
 
 use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
+pub use device::{Device, DeviceAttribute, Devices};
 use error::{CudaResult, ToResult};
 
 /*
 TODO:
-- Implement device enumeration, context management, basic module management
+- Implement context management, basic module management
 - It may be useful to have a quick-init function that initialized the driver and binds a context to
   the first device found. That's what most people will want, and if it's a well-documented helper
   method that specifies what it actually does, it's probably fine.
 */
 
 bitflags! {
-    /// Flags for initializing the CUDA driver. Currently, no flags are defined,
+    /// Bit flags for initializing the CUDA driver. Currently, no flags are defined,
     /// so ZERO is the only valid value.
     pub struct CudaFlags: u32 {
         /// No flags set. As there are currently no flags defined, this is the only accepted value.
@@ -40,9 +42,14 @@ bitflags! {
     }
 }
 
-/// Initialize the CUDA Driver API. This must be called before any other RustaCUDA (or CUDA) function
-/// is called. Typically, this should be at the start of your program. All other functions will fail
-/// unless the API is initialized first.
+/// Initialize the CUDA Driver API.
+///
+/// This must be called before any other RustaCUDA (or CUDA) function is called. Typically, this
+/// should be at the start of your program. All other functions will fail unless the API is
+/// initialized first.
+///
+/// The `flags` parameter is used to configure the CUDA API. Currently no flags are defined, so
+/// it must be `CudaFlags::ZERO`.
 pub fn init(flags: CudaFlags) -> CudaResult<()> {
     unsafe { cuInit(flags.bits()).toResult() }
 }
@@ -84,5 +91,11 @@ mod test {
         let version = CudaApiVersion { version: 9020 };
         assert_eq!(version.major(), 9);
         assert_eq!(version.minor(), 2);
+    }
+
+    #[test]
+    fn test_init_twice() {
+        init(CudaFlags::ZERO).unwrap();
+        init(CudaFlags::ZERO).unwrap();
     }
 }
