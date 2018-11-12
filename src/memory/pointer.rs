@@ -22,6 +22,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let ptr : DevicePointer<u64> = DevicePointer::null();
     /// assert!(ptr.is_null());
@@ -41,6 +42,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// use std::ptr;
     /// unsafe {
@@ -58,6 +60,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let dev_ptr = cuda_malloc::<u64>(1).unwrap();
@@ -75,6 +78,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(1).unwrap();
@@ -90,6 +94,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// use std::ptr;
     /// unsafe {
@@ -126,6 +131,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -159,6 +165,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -195,6 +202,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -236,6 +244,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -267,6 +276,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -298,6 +308,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut dev_ptr = cuda_malloc::<u64>(5).unwrap();
@@ -338,6 +349,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let ptr : UnifiedPointer<u64> = UnifiedPointer::null();
     /// assert!(ptr.is_null());
@@ -357,6 +369,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// use std::ptr;
     /// unsafe {
@@ -373,6 +386,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let unified_ptr = cuda_malloc_unified::<u64>(1).unwrap();
@@ -389,6 +403,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(1).unwrap();
@@ -406,6 +421,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// use std::ptr;
     /// unsafe {
@@ -442,6 +458,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
@@ -475,6 +492,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
@@ -511,6 +529,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
@@ -552,6 +571,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
@@ -583,6 +603,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();
@@ -614,6 +635,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// # Examples
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// unsafe {
     ///     let mut unified_ptr = cuda_malloc_unified::<u64>(5).unwrap();

@@ -73,6 +73,7 @@ mod unified;
 
 pub use self::device::*;
 pub use self::locked::*;
+pub use self::malloc::*;
 pub use self::pointer::*;
 pub use self::unified::*;
 

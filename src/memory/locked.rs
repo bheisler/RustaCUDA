@@ -27,6 +27,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let mut buffer = LockedBuffer::new(&0u64, 5).unwrap();
     /// buffer[0] = 1;
@@ -51,6 +52,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let values = [0u64; 5];
     /// let mut buffer = LockedBuffer::from_slice(&values).unwrap();
@@ -82,6 +84,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let mut buffer = unsafe { LockedBuffer::uninitialized(5).unwrap() };
     /// for i in buffer.iter_mut() {
@@ -111,6 +114,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let buffer = LockedBuffer::new(&0u64, 5).unwrap();
     /// let sum : u64 = buffer.as_slice().iter().sum();
@@ -126,6 +130,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use rustacuda::memory::*;
     /// let mut buffer = LockedBuffer::new(&0u64, 5).unwrap();
     /// for i in buffer.as_mut_slice() {
@@ -160,6 +165,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// # Examples:
     ///
     /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
     /// use std::mem;
     /// use rustacuda::memory::*;
     ///
@@ -230,6 +236,7 @@ mod test {
 
     #[test]
     fn test_new() {
+        let _context = ::quick_init().unwrap();
         let val = 0u64;
         let mut buffer = LockedBuffer::new(&val, 5).unwrap();
         buffer[0] = 1;
@@ -237,6 +244,7 @@ mod test {
 
     #[test]
     fn test_from_slice() {
+        let _context = ::quick_init().unwrap();
         let values = [0u64; 10];
         let mut buffer = LockedBuffer::from_slice(&values).unwrap();
         for i in buffer[0..3].iter_mut() {
@@ -246,6 +254,7 @@ mod test {
 
     #[test]
     fn from_raw_parts() {
+        let _context = ::quick_init().unwrap();
         let mut buffer = LockedBuffer::new(&0u64, 5).unwrap();
         buffer[2] = 1;
         let ptr = buffer.as_mut_ptr();
@@ -259,18 +268,21 @@ mod test {
 
     #[test]
     fn zero_length_buffer() {
+        let _context = ::quick_init().unwrap();
         let buffer = LockedBuffer::new(&0u64, 0).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn zero_size_type() {
+        let _context = ::quick_init().unwrap();
         let buffer = LockedBuffer::new(&ZeroSizedType, 10).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn overflows_usize() {
+        let _context = ::quick_init().unwrap();
         let err = LockedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
     }

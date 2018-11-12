@@ -22,7 +22,9 @@ pub(crate) mod private;
 
 mod derive_compile_fail;
 
+use context::{Context, ContextFlags};
 use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
+use device::Device;
 use error::{CudaResult, ToResult};
 
 /*
@@ -60,6 +62,16 @@ bitflags! {
 /// it must be `CudaFlags::empty()`.
 pub fn init(flags: CudaFlags) -> CudaResult<()> {
     unsafe { cuInit(flags.bits()).toResult() }
+}
+
+/// Shortcut for initializing the CUDA Driver API and creating a CUDA context with default settings
+/// for the first device. This is useful for testing or just setting up a basic CUDA context quickly.
+/// Users with more complex needs (multiple devices, custom flags, etc.) should use `init` and
+/// create their own context.
+pub fn quick_init() -> CudaResult<Context> {
+    init(CudaFlags::empty())?;
+    let device = Device::get_device(0)?;
+    Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)
 }
 
 /// Struct representing the CUDA API version number.

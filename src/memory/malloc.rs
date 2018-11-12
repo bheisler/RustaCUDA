@@ -1,8 +1,5 @@
 use super::DeviceCopy;
-use cuda_sys::cudart::{
-    cudaError_t, cudaFree as cudaFree_raw, cudaFreeHost, cudaMalloc as cudaMalloc_raw,
-    cudaMallocHost, cudaMallocManaged as cudaMallocManaged_raw, cudaMemAttachGlobal,
-};
+use cuda_sys::cuda;
 use error::*;
 use memory::DevicePointer;
 use memory::UnifiedPointer;
@@ -10,7 +7,7 @@ use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
 
-/// Unsafe wrapper around the `cudaMalloc` function, which allocates some device memory and
+/// Unsafe wrapper around the `cuMemAlloc` function, which allocates some device memory and
 /// returns a [`DevicePointer`](struct.DevicePointer.html) pointing to it. The memory is not cleared.
 ///
 /// Note that `count` is in units of T; thus a `count` of 3 will allocate `3 * size_of::<T>()` bytes
@@ -33,6 +30,7 @@ use std::ptr;
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for 5 u64s
@@ -43,16 +41,16 @@ use std::ptr;
 pub unsafe fn cuda_malloc<T: DeviceCopy>(count: usize) -> CudaResult<DevicePointer<T>> {
     let size = count.checked_mul(mem::size_of::<T>()).unwrap_or(0);
     if size == 0 {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cudaMalloc_raw(&mut ptr as *mut *mut c_void, size).toResult()?;
+    cuda::cuMemAlloc_v2(&mut ptr as *mut *mut c_void as *mut u64, size).toResult()?;
     let ptr = ptr as *mut T;
     Ok(DevicePointer::wrap(ptr as *mut T))
 }
 
-/// Unsafe wrapper around the `cudaMallocManaged` function, which allocates some unified memory and
+/// Unsafe wrapper around the `cuMemAllocManaged` function, which allocates some unified memory and
 /// returns a [`UnifiedPointer`](struct.UnifiedPointer.html) pointing to it. The memory is not cleared.
 ///
 /// Note that `count` is in units of T; thus a `count` of 3 will allocate `3 * size_of::<T>()` bytes
@@ -75,6 +73,7 @@ pub unsafe fn cuda_malloc<T: DeviceCopy>(count: usize) -> CudaResult<DevicePoint
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for a u64
@@ -87,11 +86,15 @@ pub unsafe fn cuda_malloc<T: DeviceCopy>(count: usize) -> CudaResult<DevicePoint
 pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<UnifiedPointer<T>> {
     let size = count.checked_mul(mem::size_of::<T>()).unwrap_or(0);
     if size == 0 {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cudaMallocManaged_raw(&mut ptr as *mut *mut c_void, size, cudaMemAttachGlobal).toResult()?;
+    cuda::cuMemAllocManaged(
+        &mut ptr as *mut *mut c_void as *mut u64,
+        size,
+        cuda::CUmemAttach_flags_enum::CU_MEM_ATTACH_GLOBAL as u32,
+    ).toResult()?;
     let ptr = ptr as *mut T;
     Ok(UnifiedPointer::wrap(ptr as *mut T))
 }
@@ -111,6 +114,7 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     let device_buffer = cuda_malloc::<u64>(5).unwrap();
@@ -121,10 +125,10 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
 pub unsafe fn cuda_free<T: DeviceCopy>(mut p: DevicePointer<T>) -> CudaResult<()> {
     let ptr = p.as_raw_mut();
     if ptr.is_null() {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cudaFree_raw(ptr as *mut c_void).toResult()?;
+    cuda::cuMemFree_v2(ptr as u64).toResult()?;
     Ok(())
 }
 
@@ -143,6 +147,7 @@ pub unsafe fn cuda_free<T: DeviceCopy>(mut p: DevicePointer<T>) -> CudaResult<()
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     let unified_buffer = cuda_malloc_unified::<u64>(5).unwrap();
@@ -153,14 +158,14 @@ pub unsafe fn cuda_free<T: DeviceCopy>(mut p: DevicePointer<T>) -> CudaResult<()
 pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> CudaResult<()> {
     let ptr = p.as_raw_mut();
     if ptr.is_null() {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cudaFree_raw(ptr as *mut c_void).toResult()?;
+    cuda::cuMemFree_v2(ptr as u64).toResult()?;
     Ok(())
 }
 
-/// Unsafe wrapper around the `cudaMallocHost` function, which allocates some page-locked host memory
+/// Unsafe wrapper around the `cuMemAllocHost` function, which allocates some page-locked host memory
 /// and returns a raw pointer pointing to it. The memory is not cleared.
 ///
 /// Note that `count` is in units of T; thus a `count` of 3 will allocate `3 * size_of::<T>()` bytes
@@ -183,6 +188,7 @@ pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> Cuda
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     // Allocate space for 5 u64s
@@ -193,11 +199,11 @@ pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> Cuda
 pub unsafe fn cuda_malloc_locked<T: DeviceCopy>(count: usize) -> CudaResult<*mut T> {
     let size = count.checked_mul(mem::size_of::<T>()).unwrap_or(0);
     if size == 0 {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cudaMallocHost(&mut ptr as *mut *mut c_void, size).toResult()?;
+    cuda::cuMemAllocHost_v2(&mut ptr as *mut *mut c_void, size).toResult()?;
     let ptr = ptr as *mut T;
     Ok(ptr as *mut T)
 }
@@ -217,6 +223,7 @@ pub unsafe fn cuda_malloc_locked<T: DeviceCopy>(count: usize) -> CudaResult<*mut
 /// # Examples
 ///
 /// ```
+/// # let _context = rustacuda::quick_init().unwrap();
 /// use rustacuda::memory::*;
 /// unsafe {
 ///     let locked_buffer = cuda_malloc_locked::<u64>(5).unwrap();
@@ -226,10 +233,10 @@ pub unsafe fn cuda_malloc_locked<T: DeviceCopy>(count: usize) -> CudaResult<*mut
 /// ```
 pub unsafe fn cuda_free_locked<T: DeviceCopy>(ptr: *mut T) -> CudaResult<()> {
     if ptr.is_null() {
-        return Err(CudaError::CudaRtError(cudaError_t::InvalidValue));
+        return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cudaFreeHost(ptr as *mut c_void).toResult()?;
+    cuda::cuMemFreeHost(ptr as *mut c_void).toResult()?;
     Ok(())
 }
 
@@ -243,6 +250,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             let device_mem = cuda_malloc::<u64>(1).unwrap();
             assert!(!device_mem.is_null());
@@ -252,9 +260,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_zero_bytes() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc::<u64>(0).unwrap_err()
             );
         }
@@ -262,9 +271,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_zero_sized() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc::<ZeroSizedType>(10).unwrap_err()
             );
         }
@@ -272,9 +282,10 @@ mod test {
 
     #[test]
     fn test_cuda_alloc_overflow() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc::<u64>(::std::usize::MAX - 1).unwrap_err()
             );
         }
@@ -282,6 +293,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             let mut unified = cuda_malloc_unified::<u64>(1).unwrap();
             assert!(!unified.is_null());
@@ -295,9 +307,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_zero_bytes() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_unified::<u64>(0).unwrap_err()
             );
         }
@@ -305,9 +318,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_zero_sized() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_unified::<ZeroSizedType>(10).unwrap_err()
             );
         }
@@ -315,9 +329,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_overflow() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_unified::<u64>(::std::usize::MAX - 1).unwrap_err()
             );
         }
@@ -325,10 +340,11 @@ mod test {
 
     #[test]
     fn test_cuda_free_null() {
+        let _context = ::quick_init().unwrap();
         let null = ::std::ptr::null_mut::<u64>();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_free(DevicePointer::wrap(null)).unwrap_err()
             );
         }
@@ -336,6 +352,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             let locked = cuda_malloc_locked::<u64>(1).unwrap();
             assert!(!locked.is_null());
@@ -349,9 +366,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_zero_bytes() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_locked::<u64>(0).unwrap_err()
             );
         }
@@ -359,9 +377,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_zero_sized() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_locked::<ZeroSizedType>(10).unwrap_err()
             );
         }
@@ -369,9 +388,10 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_overflow() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_malloc_locked::<u64>(::std::usize::MAX - 1).unwrap_err()
             );
         }
@@ -379,9 +399,10 @@ mod test {
 
     #[test]
     fn test_cuda_free_locked_null() {
+        let _context = ::quick_init().unwrap();
         unsafe {
             assert_eq!(
-                CudaError::CudaRtError(cudaError_t::InvalidValue),
+                CudaError::InvalidMemoryAllocation,
                 cuda_free_locked(::std::ptr::null_mut::<u64>()).unwrap_err()
             );
         }
