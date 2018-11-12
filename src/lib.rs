@@ -14,15 +14,15 @@
 extern crate bitflags;
 extern crate cuda_sys;
 
+pub mod context;
+pub mod device;
 pub mod error;
 pub mod memory;
 pub(crate) mod private;
 
 mod derive_compile_fail;
-mod device;
 
 use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
-pub use device::{Device, DeviceAttribute, Devices};
 use error::{CudaResult, ToResult};
 
 /*
@@ -31,14 +31,22 @@ TODO:
 - It may be useful to have a quick-init function that initialized the driver and binds a context to
   the first device found. That's what most people will want, and if it's a well-documented helper
   method that specifies what it actually does, it's probably fine.
+- Anything that must be Drop'd should provide an explicit drop function which returns the error
+  instead of double-panicking.
+- Add a prelude and use it (and quick-init) for all of the examples.
+- Ensure that all types that should be Send/Sync are
+Help wanted:
+- Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
+  I haven't been able to manage it.
 */
 
 bitflags! {
     /// Bit flags for initializing the CUDA driver. Currently, no flags are defined,
-    /// so ZERO is the only valid value.
+    /// so `CudaFlags::empty()` is the only valid value.
     pub struct CudaFlags: u32 {
-        /// No flags set. As there are currently no flags defined, this is the only accepted value.
-        const ZERO = 0;
+        // We need to give bitflags at least one constant.
+        #[doc(hidden)]
+        const _ZERO = 0;
     }
 }
 
@@ -49,7 +57,7 @@ bitflags! {
 /// initialized first.
 ///
 /// The `flags` parameter is used to configure the CUDA API. Currently no flags are defined, so
-/// it must be `CudaFlags::ZERO`.
+/// it must be `CudaFlags::empty()`.
 pub fn init(flags: CudaFlags) -> CudaResult<()> {
     unsafe { cuInit(flags.bits()).toResult() }
 }
@@ -95,7 +103,7 @@ mod test {
 
     #[test]
     fn test_init_twice() {
-        init(CudaFlags::ZERO).unwrap();
-        init(CudaFlags::ZERO).unwrap();
+        init(CudaFlags::empty()).unwrap();
+        init(CudaFlags::empty()).unwrap();
     }
 }

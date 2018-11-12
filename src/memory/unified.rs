@@ -1,7 +1,7 @@
 use super::DeviceCopy;
 use error::*;
+use memory::malloc::{cuda_free_unified, cuda_malloc_unified};
 use memory::UnifiedPointer;
-use memory::{cuda_free_unified, cuda_malloc_unified};
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::convert::{AsMut, AsRef};

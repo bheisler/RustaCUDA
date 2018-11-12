@@ -1,8 +1,8 @@
 use cuda_sys::cudart::*;
 use error::{CudaError, CudaResult, ToResult};
+use memory::malloc::{cuda_free, cuda_malloc};
 use memory::DeviceCopy;
 use memory::DevicePointer;
-use memory::{cuda_free, cuda_malloc};
 use std::fmt::{self, Pointer};
 use std::iter::{ExactSizeIterator, FusedIterator};
 use std::mem;

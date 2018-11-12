@@ -1,3 +1,5 @@
+//! Functions and types for enumerating CUDA devices and retrieving information about them.
+
 use cuda_sys::cuda::*;
 use error::{CudaResult, ToResult};
 use std::ffi::CStr;
@@ -197,7 +199,7 @@ pub enum DeviceAttribute {
 /// Opaque handle to a CUDA device.
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub struct Device {
-    device: CUdevice,
+    pub(crate) device: CUdevice,
 }
 impl Device {
     /// Get the number of CUDA-capable devices.
@@ -207,8 +209,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::Device;
     /// let num_devices = Device::num_devices().unwrap();
     /// println!("Number of devices: {}", num_devices);
     /// ```
@@ -226,8 +229,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::Device;
     /// let device = Device::get_device(0).unwrap();
     /// println!("Device Name: {}", device.name().unwrap());
     /// ```
@@ -243,8 +247,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::Device;
     /// for device in Device::devices().unwrap() {
     ///     let device = device.unwrap();
     ///     println!("Device Name: {}", device.name().unwrap());
@@ -260,8 +265,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::Device;
     /// let device = Device::get_device(0).unwrap();
     /// println!("Device Memory: {}", device.total_memory().unwrap());
     /// ```
@@ -277,8 +283,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::Device;
     /// let device = Device::get_device(0).unwrap();
     /// println!("Device Name: {}", device.name().unwrap());
     /// ```
@@ -295,8 +302,9 @@ impl Device {
     ///
     /// # Example:
     /// ```
-    /// use rustacuda::*;
-    /// # init(CudaFlags::ZERO).unwrap();
+    /// # use rustacuda::*;
+    /// # init(CudaFlags::empty()).unwrap();
+    /// use rustacuda::device::{Device, DeviceAttribute};
     /// let device = Device::get_device(0).unwrap();
     /// println!("Max Threads Per Block: {}",
     ///     device.get_attribute(DeviceAttribute::MaxThreadsPerBlock).unwrap());
@@ -312,6 +320,10 @@ impl Device {
             ).toResult()?;
             Ok(val)
         }
+    }
+
+    pub(crate) fn into_inner(self) -> CUdevice {
+        self.device
     }
 }
 
@@ -334,7 +346,7 @@ mod test {
     use super::*;
 
     fn test_init() {
-        ::init(::CudaFlags::ZERO).unwrap();
+        ::init(::CudaFlags::empty()).unwrap();
     }
 
     #[test]

@@ -7,7 +7,7 @@
 //!
 //! Device memory is just what it sounds like - memory allocated on the device. Device memory
 //! cannot be accessed from the host directly, but data can be copied to and from the device.
-//! RustaCUDA exposes device memory through the [`DeviceBox`](struct.Devicebox.html) and
+//! RustaCUDA exposes device memory through the [`DeviceBox`](struct.DeviceBox.html) and
 //! [`DeviceBuffer`](struct.DeviceBuffer.html) structures. Pointers to device memory are
 //! represented by [`DevicePointer`](struct.DevicePointer.html), while slices in device memory are
 //! represented by [`DeviceSlice`](struct.DeviceSlice.html).
@@ -73,7 +73,6 @@ mod unified;
 
 pub use self::device::*;
 pub use self::locked::*;
-pub use self::malloc::*;
 pub use self::pointer::*;
 pub use self::unified::*;
 

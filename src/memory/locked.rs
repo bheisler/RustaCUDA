@@ -1,6 +1,6 @@
 use super::DeviceCopy;
 use error::*;
-use memory::{cuda_free_locked, cuda_malloc_locked};
+use memory::malloc::{cuda_free_locked, cuda_malloc_locked};
 use std::mem;
 use std::ops;
 use std::ptr;
