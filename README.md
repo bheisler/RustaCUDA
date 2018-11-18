@@ -1,6 +1,6 @@
 <h1 align="center">RustaCUDA</h1>
 
-<div align="center">High-level Interface to [NVIDIA® CUDA™](https://developer.nvidia.com/cuda-zone) in Rust</div>
+<div align="center">High-level Interface to <a href="https://developer.nvidia.com/cuda-zone">NVIDIA® CUDA™</a> in Rust</div>
 
 RustaCUDA helps you bring GPU-acceleration to your projects by providing a high-level, easy-to-use
 interface to the CUDA GPU computing toolkit. Bring the power and safety of Rust to a whole new
