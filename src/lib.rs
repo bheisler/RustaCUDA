@@ -18,6 +18,7 @@ pub mod context;
 pub mod device;
 pub mod error;
 pub mod memory;
+pub mod module;
 pub(crate) mod private;
 
 mod derive_compile_fail;
@@ -29,17 +30,21 @@ use error::{CudaResult, ToResult};
 
 /*
 TODO:
-- Implement context management, basic module management
-- It may be useful to have a quick-init function that initialized the driver and binds a context to
-  the first device found. That's what most people will want, and if it's a well-documented helper
-  method that specifies what it actually does, it's probably fine.
+- Implement basic module management
+- Figure out an error-handling story
+- Document this module
+- Write the user guide
+- It should be possible to allocate an uninitialized DeviceBuffer without T: DeviceCopy.
+- Set up CI to generate docs
+TODO Later:
 - Anything that must be Drop'd should provide an explicit drop function which returns the error
   instead of double-panicking.
-- Add a prelude and use it (and quick-init) for all of the examples.
-- Ensure that all types that should be Send/Sync are
+- Add a prelude? What should be in it?
 Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
   I haven't been able to manage it.
+- Which types should implement Send/Sync?
+- Implement the rest of the driver API
 */
 
 bitflags! {
@@ -65,9 +70,11 @@ pub fn init(flags: CudaFlags) -> CudaResult<()> {
 }
 
 /// Shortcut for initializing the CUDA Driver API and creating a CUDA context with default settings
-/// for the first device. This is useful for testing or just setting up a basic CUDA context quickly.
-/// Users with more complex needs (multiple devices, custom flags, etc.) should use `init` and
-/// create their own context.
+/// for the first device.
+///
+/// This is useful for testing or just setting up a basic CUDA context quickly. Users with more
+/// complex needs (multiple devices, custom flags, etc.) should use `init` and create their own
+/// context.
 pub fn quick_init() -> CudaResult<Context> {
     init(CudaFlags::empty())?;
     let device = Device::get_device(0)?;
