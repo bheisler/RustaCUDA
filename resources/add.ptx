@@ -11,7 +11,7 @@
 .address_size 64
 
         // .globl       sum
-.const .align 4 .u32 pi = 314;
+.const .align 4 .u32 my_constant = 314;
 
 .visible .entry sum(
         .param .u64 sum_param_0,

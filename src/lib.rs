@@ -35,6 +35,7 @@ TODO:
 - Document this module
 - Write the user guide
 - It should be possible to allocate an uninitialized DeviceBuffer without T: DeviceCopy.
+    - Likewise, it should be possible to have a DevicePointer<T> where T does not impl DeviceCopy.
 - Set up CI to generate docs
 TODO Later:
 - Anything that must be Drop'd should provide an explicit drop function which returns the error
