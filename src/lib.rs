@@ -30,7 +30,7 @@ use error::{CudaResult, ToResult};
 
 /*
 TODO:
-- Implement basic module management
+- Implement basic function launching and device synchronization
 - Figure out an error-handling story
 - Document this module
 - Write the user guide
@@ -41,6 +41,9 @@ TODO Later:
 - Anything that must be Drop'd should provide an explicit drop function which returns the error
   instead of double-panicking.
 - Add a prelude? What should be in it?
+    - CopyDestination should be. 
+    - Probably DeviceBuffer/DeviceBox or UnifiedBuffer/UnifiedBox or all of those as well.
+- What should be #[inline]'d?
 Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
   I haven't been able to manage it.

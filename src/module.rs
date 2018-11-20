@@ -119,6 +119,37 @@ impl Module {
             })
         }
     }
+
+    /// Get a reference to a kernel function which can then be launched.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # let _ctx = quick_init().unwrap();
+    /// use rustacuda::module::Module;
+    /// use std::ffi::CString;
+    ///
+    /// let filename = CString::new("./resources/add.ptx").unwrap();
+    /// let module = Module::load(&filename).unwrap();
+    /// let name = CString::new("sum").unwrap();
+    /// let function = module.get_function(&name).unwrap();
+    /// ```
+    pub fn get_function<'a>(&'a self, name: &CStr) -> CudaResult<Function<'a>> {
+        unsafe {
+            let mut func: cuda::CUfunction = ptr::null_mut();
+
+            cuda::cuModuleGetFunction(
+                &mut func as *mut cuda::CUfunction,
+                self.inner,
+                name.as_ptr(),
+            ).toResult()?;
+            Ok(Function {
+                func: func,
+                module: PhantomData,
+            })
+        }
+    }
 }
 impl Drop for Module {
     fn drop(&mut self) {
@@ -173,6 +204,13 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
         }
         Ok(())
     }
+}
+
+/// Handle to a global kernel function.
+#[derive(Debug)]
+pub struct Function<'a> {
+    func: cuda::CUfunction,
+    module: PhantomData<&'a Module>,
 }
 
 #[cfg(test)]
