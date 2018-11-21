@@ -20,6 +20,7 @@ pub mod error;
 pub mod memory;
 pub mod module;
 pub(crate) mod private;
+pub mod stream;
 
 mod derive_compile_fail;
 
@@ -48,7 +49,16 @@ Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
   I haven't been able to manage it.
 - Which types should implement Send/Sync?
-- Implement the rest of the driver API
+- Implement the rest of the driver API:
+    - Asynchronous memcpy
+    - Events
+    - Primary contexts
+    - JIT linking
+    - CUDA arrays
+    - textures
+    - surfaces (what even is this stuff?)
+    - Unified memory prefetching, advising, attributes
+    - More
 */
 
 bitflags! {
