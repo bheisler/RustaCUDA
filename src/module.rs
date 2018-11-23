@@ -4,14 +4,13 @@
 
 use cuda_sys::cuda;
 use error::{CudaResult, ToResult};
+use function::Function;
 use memory::{CopyDestination, DeviceCopy, DevicePointer};
 use std::ffi::{c_void, CStr};
 use std::fmt;
 use std::marker::PhantomData;
 use std::mem;
 use std::ptr;
-
-// TODO: Add symbol and function structs
 
 /// A compiled CUDA module, loaded into a context.
 #[derive(Debug)]
@@ -144,10 +143,7 @@ impl Module {
                 self.inner,
                 name.as_ptr(),
             ).toResult()?;
-            Ok(Function {
-                func: func,
-                module: PhantomData,
-            })
+            Ok(Function::new(func, self))
         }
     }
 }
@@ -204,13 +200,6 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
         }
         Ok(())
     }
-}
-
-/// Handle to a global kernel function.
-#[derive(Debug)]
-pub struct Function<'a> {
-    func: cuda::CUfunction,
-    module: PhantomData<&'a Module>,
 }
 
 #[cfg(test)]

@@ -607,10 +607,7 @@ impl CurrentContext {
     /// CurrentContext::set_cache_config(CacheConfig::PreferL1).unwrap();
     /// ```
     pub fn set_cache_config(cfg: CacheConfig) -> CudaResult<()> {
-        unsafe {
-            cuda::cuCtxSetCacheConfig(transmute(cfg)).toResult()?;
-            Ok(())
-        }
+        unsafe { cuda::cuCtxSetCacheConfig(transmute(cfg)).toResult() }
     }
 
     /// Sets a requested resource limit for the current context.
@@ -675,10 +672,7 @@ impl CurrentContext {
     /// CurrentContext::set_shared_memory_config(SharedMemoryConfig::DefaultBankSize).unwrap();
     /// ```
     pub fn set_shared_memory_config(cfg: SharedMemoryConfig) -> CudaResult<()> {
-        unsafe {
-            cuda::cuCtxSetSharedMemConfig(transmute(cfg)).toResult()?;
-            Ok(())
-        }
+        unsafe { cuda::cuCtxSetSharedMemConfig(transmute(cfg)).toResult() }
     }
 
     /// Returns a non-owning handle to the current context.

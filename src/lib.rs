@@ -21,6 +21,7 @@ pub mod memory;
 pub mod module;
 pub(crate) mod private;
 pub mod stream;
+pub mod function;
 
 mod derive_compile_fail;
 
@@ -30,14 +31,31 @@ use device::Device;
 use error::{CudaResult, ToResult};
 
 /*
-TODO:
+TODO before announcement:
 - Implement basic function launching and device synchronization
+
+Example launch macro invocations:
+launch!(module.function<<<grid, block, 0, stream>>>(arg1, arg2, arg3)); // Looks up the function first
+launch!(function<<<grid, block, 0, stream>>>(arg1, arg2, arg3)); // Uses the function directly
+
+// If possible, use Into to allow users to pass numbers/tuples rather than just grid/blockdims.
+launch!(function<<<1024, 256, 0, stream>>>(arg1, arg2, arg3));
+launch!(function<<<(16, 16), (8, 8), 0, stream>>>(arg1, arg2, arg3));
+
+Launches must be unsafe, since it's effectively an FFI call.
+
 - Figure out an error-handling story
-- Document this module
+- Document this module. Just do a pass or two over the documentation and examples in general.
 - Write the user guide
-- It should be possible to allocate an uninitialized DeviceBuffer without T: DeviceCopy.
+    - Basic example
+    - Using nvcc to compile kernels
+    - Using ptx-builder to compile kernels
+- It should be possible to allocate an uninitialized DeviceBuffer/Box without T: DeviceCopy.
     - Likewise, it should be possible to have a DevicePointer<T> where T does not impl DeviceCopy.
-- Set up CI to generate docs
+    - This must not be possible for UnifiedMemory.
+- Set up CI to generate docs and (if possible) compile (but not test)
+- Rework path tracer to use RustaCUDA
+- Write up the announcement post
 TODO Later:
 - Anything that must be Drop'd should provide an explicit drop function which returns the error
   instead of double-panicking.
