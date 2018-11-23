@@ -137,4 +137,8 @@ impl<'a> Function<'a> {
     pub fn set_shared_memory_config(&mut self, cfg: SharedMemoryConfig) -> CudaResult<()> {
         unsafe { cuda::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).toResult() }
     }
+
+    pub(crate) fn to_inner(&self) -> CUfunction {
+        self.inner
+    }
 }
