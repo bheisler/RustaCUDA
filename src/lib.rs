@@ -19,7 +19,6 @@ pub mod device;
 pub mod error;
 pub mod memory;
 pub mod module;
-pub(crate) mod private;
 pub mod stream;
 
 #[macro_export]
@@ -142,4 +141,9 @@ mod test {
         init(CudaFlags::empty()).unwrap();
         init(CudaFlags::empty()).unwrap();
     }
+}
+
+// Fake module with a private trait used to prevent outside code from implementing certain traits.
+pub(crate) mod private {
+    pub trait Sealed {}
 }

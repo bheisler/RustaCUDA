@@ -1,3 +1,5 @@
+//! Functions and types for working with CUDA kernels.
+
 use context::{CacheConfig, SharedMemoryConfig};
 use cuda_sys::cuda::{self, CUfunction};
 use error::{CudaResult, ToResult};

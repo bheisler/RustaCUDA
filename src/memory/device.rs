@@ -225,6 +225,7 @@ impl<T> Pointer for DeviceBox<T> {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
+impl<T> ::private::Sealed for DeviceBox<T> {}
 impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();
@@ -769,6 +770,7 @@ impl_index!{
     RangeTo<usize>
     RangeToInclusive<usize>
 }
+impl<T> ::private::Sealed for DeviceSlice<T> {}
 impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
         let val = val.as_ref();

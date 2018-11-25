@@ -20,13 +20,13 @@
 //! Also, the fact that a context can be current to multiple threads at once means that there can be
 //! multiple implicit references to a context which are not controlled by Rust.
 //!
-//! RustaCUDA handles ownership by providing an owning `Context` struct and a non-owning
-//! `UnownedContext`. When the `Context` is dropped, the backing context is destroyed. The context
-//! could be current on other threads, though. In this case, the context is still destroyed, and
-//! attempts to access the context on other threads will fail with an error. This is (mostly) safe,
-//! if a bit inconvenient. It's only mostly safe because other threads could be accessing that
-//! context while the destructor is running on this thread, which could result in undefined
-//! behavior.
+//! RustaCUDA handles ownership by providing an owning [`Context`](struct.Context.html) struct and
+//! a non-owning [`UnownedContext`](struct.UnownedContext.html). When the `Context` is dropped, the
+//! backing context is destroyed. The context could be current on other threads, though. In this
+//! case, the context is still destroyed, and attempts to access the context on other threads will
+//! fail with an error. This is (mostly) safe, if a bit inconvenient. It's only mostly safe because
+//! other threads could be accessing that context while the destructor is running on this thread,
+//! which could result in undefined behavior.
 //!
 //! In short, Rust's thread-safety guarantees cannot fully protect use of the context management
 //! functions. The programmer must ensure that no other OS threads are using the `Context` when it
