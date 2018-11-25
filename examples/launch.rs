@@ -1,12 +1,7 @@
 #[macro_use]
 extern crate rustacuda;
 
-use rustacuda::context::{Context, ContextFlags};
-use rustacuda::device::Device;
-use rustacuda::memory::*;
-use rustacuda::module::Module;
-use rustacuda::stream::{Stream, StreamFlags};
-use rustacuda::CudaFlags;
+use rustacuda::prelude::*;
 use std::ffi::CString;
 
 fn main() {

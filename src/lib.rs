@@ -78,12 +78,8 @@
 //! #[macro_use]
 //! extern crate rustacuda;
 //!
-//! use rustacuda::*;
-//! use rustacuda::device::*;
-//! use rustacuda::stream::*;
-//! use rustacuda::module::*;
-//! use rustacuda::context::*;
-//! use rustacuda::memory::*;
+//! use rustacuda::prelude::*;
+//! use rustacuda::memory::DeviceBox;
 //! use std::error::Error;
 //! use std::ffi::CString;
 //!
@@ -98,9 +94,11 @@
 //!     let context = Context::create_and_push(
 //!         ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
 //!
+//!     // Load the module containing the function we want to call
 //!     let module_data = CString::new(include_str!("../resources/add.ptx"))?;
 //!     let module = Module::load_data(&module_data)?;
 //!
+//!     // Create a stream to submit work to
 //!     let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
 //!
 //!     // Allocate space on the device and copy numbers to it.
@@ -156,6 +154,7 @@ pub mod error;
 pub mod function;
 pub mod memory;
 pub mod module;
+pub mod prelude;
 pub mod stream;
 
 mod derive_compile_fail;
@@ -174,10 +173,6 @@ TODO before announcement:
 - Set up CI to generate docs and (if possible) compile (but not test)
 - Rework path tracer to use RustaCUDA
 - Write up the announcement post
-- Add a prelude? What should be in it?
-    - CopyDestination should be. 
-    - Probably DeviceBuffer/DeviceBox or UnifiedBuffer/UnifiedBox or all of those as well.
-
 - Write contributor docs and such
 Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
