@@ -139,7 +139,7 @@ use std::num::*;
 /// invalid reference on the device which would segfault if dereferenced. Generalizing this, any
 /// type implementing `Drop` cannot be `DeviceCopy` since it is responsible for some resource that
 /// would not be available on the device.
-pub unsafe trait DeviceCopy: Clone {
+pub unsafe trait DeviceCopy {
     // Empty
 }
 

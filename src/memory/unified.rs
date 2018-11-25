@@ -277,7 +277,7 @@ pub struct UnifiedBuffer<T: DeviceCopy> {
     buf: UnifiedPointer<T>,
     capacity: usize,
 }
-impl<T: DeviceCopy> UnifiedBuffer<T> {
+impl<T: DeviceCopy + Clone> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
     ///
@@ -329,7 +329,8 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
             Ok(uninit)
         }
     }
-
+}
+impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///

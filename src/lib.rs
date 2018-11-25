@@ -40,23 +40,19 @@ TODO before announcement:
     - Basic example
     - Using nvcc to compile kernels
     - Using ptx-builder to compile kernels
-- It should be possible to allocate an uninitialized DeviceBuffer/Box without T: DeviceCopy.
-    - Likewise, it should be possible to have a DevicePointer<T> where T does not impl DeviceCopy.
-    - This must not be possible for UnifiedMemory.
 - Set up CI to generate docs and (if possible) compile (but not test)
 - Rework path tracer to use RustaCUDA
 - Write up the announcement post
-TODO Later:
-- Anything that must be Drop'd should provide an explicit drop function which returns the error
-  instead of double-panicking.
 - Add a prelude? What should be in it?
     - CopyDestination should be. 
     - Probably DeviceBuffer/DeviceBox or UnifiedBuffer/UnifiedBox or all of those as well.
-- What should be #[inline]'d?
+- Anything that must be Drop'd should provide an explicit drop function which returns the error
+  instead of double-panicking.
 Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
   I haven't been able to manage it.
 - Which types should implement Send/Sync?
+- What should be #[inline]'d?
 - Implement the rest of the driver API:
     - Asynchronous memcpy
     - Events

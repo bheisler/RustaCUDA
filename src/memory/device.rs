@@ -36,7 +36,7 @@ pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
 ///
 /// See the [`module-level documentation`](../memory/index.html) for more information on device memory.
 #[derive(Debug)]
-pub struct DeviceBox<T: DeviceCopy> {
+pub struct DeviceBox<T> {
     ptr: DevicePointer<T>,
 }
 impl<T: DeviceCopy> DeviceBox<T> {
@@ -60,7 +60,8 @@ impl<T: DeviceCopy> DeviceBox<T> {
         dev_box.copy_from(val)?;
         Ok(dev_box)
     }
-
+}
+impl<T> DeviceBox<T> {
     /// Allocate device memory, but do not initialize it.
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
@@ -170,7 +171,7 @@ impl<T: DeviceCopy> DeviceBox<T> {
         ptr
     }
 }
-impl<T: DeviceCopy> Drop for DeviceBox<T> {
+impl<T> Drop for DeviceBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
             let ptr = ::std::mem::replace(&mut self.ptr, DevicePointer::null());
@@ -181,7 +182,7 @@ impl<T: DeviceCopy> Drop for DeviceBox<T> {
         }
     }
 }
-impl<T: DeviceCopy> Pointer for DeviceBox<T> {
+impl<T> Pointer for DeviceBox<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
     }
@@ -318,13 +319,12 @@ mod test_device_box {
 /// Fixed-size device-side slice.
 #[derive(Debug)]
 #[repr(C)]
-pub struct DeviceSlice<T: DeviceCopy>([T]);
+pub struct DeviceSlice<T>([T]);
 // This works by faking a regular slice out of the device raw-pointer and the length and transmuting
 // I have no idea if this is safe or not. Probably not, though I can't imagine how the compiler
 // could possibly know that the pointer is not de-referenceable. I'm banking that we get proper
 // Dynamicaly-sized Types before the compiler authors break this assumption.
-
-impl<T: DeviceCopy> DeviceSlice<T> {
+impl<T> DeviceSlice<T> {
     /// Returns the number of elements in the slice.
     ///
     /// # Examples
@@ -610,8 +610,8 @@ impl<T: DeviceCopy> DeviceSlice<T> {
 ///
 /// This struct is created by the `chunks` method on `DeviceSlices`.
 #[derive(Debug, Clone)]
-pub struct DeviceChunks<'a, T: DeviceCopy + 'a>(Chunks<'a, T>);
-impl<'a, T: DeviceCopy> Iterator for DeviceChunks<'a, T> {
+pub struct DeviceChunks<'a, T: 'a>(Chunks<'a, T>);
+impl<'a, T> Iterator for DeviceChunks<'a, T> {
     type Item = &'a DeviceSlice<T>;
 
     fn next(&mut self) -> Option<&'a DeviceSlice<T>> {
@@ -641,7 +641,7 @@ impl<'a, T: DeviceCopy> Iterator for DeviceChunks<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
     }
 }
-impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunks<'a, T> {
+impl<'a, T> DoubleEndedIterator for DeviceChunks<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a DeviceSlice<T>> {
         self.0
@@ -649,8 +649,8 @@ impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunks<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice(slice) })
     }
 }
-impl<'a, T: DeviceCopy> ExactSizeIterator for DeviceChunks<'a, T> {}
-impl<'a, T: DeviceCopy> FusedIterator for DeviceChunks<'a, T> {}
+impl<'a, T> ExactSizeIterator for DeviceChunks<'a, T> {}
+impl<'a, T> FusedIterator for DeviceChunks<'a, T> {}
 
 /// An iterator over a [`DeviceSlice`](struct.DeviceSlice.html) in (non-overlapping) mutable chunks
 /// (`chunk_size` elements at a time).
@@ -660,8 +660,8 @@ impl<'a, T: DeviceCopy> FusedIterator for DeviceChunks<'a, T> {}
 ///
 /// This struct is created by the `chunks` method on `DeviceSlices`.
 #[derive(Debug)]
-pub struct DeviceChunksMut<'a, T: DeviceCopy + 'a>(ChunksMut<'a, T>);
-impl<'a, T: DeviceCopy> Iterator for DeviceChunksMut<'a, T> {
+pub struct DeviceChunksMut<'a, T: 'a>(ChunksMut<'a, T>);
+impl<'a, T> Iterator for DeviceChunksMut<'a, T> {
     type Item = &'a mut DeviceSlice<T>;
 
     fn next(&mut self) -> Option<&'a mut DeviceSlice<T>> {
@@ -691,7 +691,7 @@ impl<'a, T: DeviceCopy> Iterator for DeviceChunksMut<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
     }
 }
-impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunksMut<'a, T> {
+impl<'a, T> DoubleEndedIterator for DeviceChunksMut<'a, T> {
     #[inline]
     fn next_back(&mut self) -> Option<&'a mut DeviceSlice<T>> {
         self.0
@@ -699,13 +699,13 @@ impl<'a, T: DeviceCopy> DoubleEndedIterator for DeviceChunksMut<'a, T> {
             .map(|slice| unsafe { DeviceSlice::from_slice_mut(slice) })
     }
 }
-impl<'a, T: DeviceCopy> ExactSizeIterator for DeviceChunksMut<'a, T> {}
-impl<'a, T: DeviceCopy> FusedIterator for DeviceChunksMut<'a, T> {}
+impl<'a, T> ExactSizeIterator for DeviceChunksMut<'a, T> {}
+impl<'a, T> FusedIterator for DeviceChunksMut<'a, T> {}
 
 macro_rules! impl_index {
     ($($t:ty)*) => {
         $(
-            impl<T: DeviceCopy> Index<$t> for DeviceSlice<T>
+            impl<T> Index<$t> for DeviceSlice<T>
             {
                 type Output = DeviceSlice<T>;
 
@@ -714,7 +714,7 @@ macro_rules! impl_index {
                 }
             }
 
-            impl<T: DeviceCopy> IndexMut<$t> for DeviceSlice<T>
+            impl<T> IndexMut<$t> for DeviceSlice<T>
             {
                 fn index_mut(&mut self, index: $t) -> &mut Self {
                     unsafe { DeviceSlice::from_slice_mut( self.0.index_mut(index)) }
@@ -810,34 +810,11 @@ impl<T: DeviceCopy> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
 
 /// Fixed-size device-side buffer. Provides basic access to device memory.
 #[derive(Debug)]
-pub struct DeviceBuffer<T: DeviceCopy> {
+pub struct DeviceBuffer<T> {
     buf: DevicePointer<T>,
     capacity: usize,
 }
-impl<T: DeviceCopy> DeviceBuffer<T> {
-    /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
-    /// the data in `slice`.
-    ///
-    /// # Errors:
-    ///
-    /// If the allocation fails, returns the error from CUDA.
-    ///
-    /// # Examples:
-    ///
-    /// ```
-    /// # let _context = rustacuda::quick_init().unwrap();
-    /// use rustacuda::memory::*;
-    /// let values = [0u64; 5];
-    /// let mut buffer = DeviceBuffer::from_slice(&values).unwrap();
-    /// ```
-    pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
-        unsafe {
-            let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
-            uninit.copy_from(slice).unwrap();
-            Ok(uninit)
-        }
-    }
-
+impl<T> DeviceBuffer<T> {
     /// Allocate a new device buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
@@ -915,7 +892,31 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
         DeviceBuffer { buf: ptr, capacity }
     }
 }
-impl<T: DeviceCopy> Deref for DeviceBuffer<T> {
+impl<T: DeviceCopy> DeviceBuffer<T> {
+    /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
+    /// the data in `slice`.
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let values = [0u64; 5];
+    /// let mut buffer = DeviceBuffer::from_slice(&values).unwrap();
+    /// ```
+    pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
+        unsafe {
+            let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
+            uninit.copy_from(slice).unwrap();
+            Ok(uninit)
+        }
+    }
+}
+impl<T> Deref for DeviceBuffer<T> {
     type Target = DeviceSlice<T>;
 
     fn deref(&self) -> &DeviceSlice<T> {
@@ -927,7 +928,7 @@ impl<T: DeviceCopy> Deref for DeviceBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> DerefMut for DeviceBuffer<T> {
+impl<T> DerefMut for DeviceBuffer<T> {
     fn deref_mut(&mut self) -> &mut DeviceSlice<T> {
         unsafe {
             &mut *(::std::slice::from_raw_parts_mut(self.buf.as_raw_mut(), self.capacity)
@@ -935,7 +936,7 @@ impl<T: DeviceCopy> DerefMut for DeviceBuffer<T> {
         }
     }
 }
-impl<T: DeviceCopy> Drop for DeviceBuffer<T> {
+impl<T> Drop for DeviceBuffer<T> {
     fn drop(&mut self) {
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
@@ -1031,5 +1032,15 @@ mod test_device_buffer {
         let mut buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let start = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4]).unwrap();
         let _ = buf.copy_from(&start);
+    }
+
+    #[test]
+    fn test_can_create_uninitialized_non_devicecopy_buffers() {
+        let _context = ::quick_init().unwrap();
+        unsafe {
+            let _box: DeviceBox<Vec<u8>> = DeviceBox::uninitialized().unwrap();
+            let buffer: DeviceBuffer<Vec<u8>> = DeviceBuffer::uninitialized(10).unwrap();
+            let _slice = &buffer[0..5];
+        }
     }
 }

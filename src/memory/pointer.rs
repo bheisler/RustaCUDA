@@ -14,9 +14,9 @@ use std::ptr;
 /// thus possible to pass a `DevicePointer` to a CUDA kernel written in C.
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct DevicePointer<T: DeviceCopy>(*mut T);
-unsafe impl<T: DeviceCopy> DeviceCopy for DevicePointer<T> {}
-impl<T: DeviceCopy> DevicePointer<T> {
+pub struct DevicePointer<T>(*mut T);
+unsafe impl<T> DeviceCopy for DevicePointer<T> {}
+impl<T> DevicePointer<T> {
     /// Returns a null device pointer.
     ///
     /// # Examples:
@@ -323,7 +323,7 @@ impl<T: DeviceCopy> DevicePointer<T> {
         self.wrapping_offset((count as isize).wrapping_neg())
     }
 }
-impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
+impl<T> ::std::fmt::Pointer for DevicePointer<T> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         ::std::fmt::Pointer::fmt(&self.0, f)
     }
@@ -340,7 +340,7 @@ impl<T: DeviceCopy> ::std::fmt::Pointer for DevicePointer<T> {
 /// `UnifiedPointer` through an FFI boundary to C code expecting a `*mut T`. It is
 /// thus possible to pass a `UnifiedPointer` to a CUDA kernel written in C.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Hash, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub struct UnifiedPointer<T: DeviceCopy>(*mut T);
 unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 impl<T: DeviceCopy> UnifiedPointer<T> {
@@ -653,5 +653,10 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
 impl<T: DeviceCopy> ::std::fmt::Pointer for UnifiedPointer<T> {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         ::std::fmt::Pointer::fmt(&self.0, f)
+    }
+}
+impl<T: DeviceCopy> Clone for UnifiedPointer<T> {
+    fn clone(&self) -> Self {
+        UnifiedPointer(self.0)
     }
 }
