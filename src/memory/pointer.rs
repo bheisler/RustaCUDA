@@ -13,7 +13,7 @@ use std::ptr;
 /// the other side of that boundary does not attempt to dereference the pointer on the CPU. It is
 /// thus possible to pass a `DevicePointer` to a CUDA kernel written in C.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq, PartialOrd, Ord)]
+#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct DevicePointer<T>(*mut T);
 unsafe impl<T> DeviceCopy for DevicePointer<T> {}
 impl<T> DevicePointer<T> {
@@ -68,7 +68,7 @@ impl<T> DevicePointer<T> {
     ///     cuda_free(dev_ptr);
     /// }
     /// ```
-    pub fn as_raw(&self) -> *const T {
+    pub fn as_raw(self) -> *const T {
         self.0
     }
 
@@ -102,7 +102,7 @@ impl<T> DevicePointer<T> {
     ///     assert!(DevicePointer::wrap(null).is_null());
     /// }
     /// ```
-    pub fn is_null(&self) -> bool {
+    pub fn is_null(self) -> bool {
         self.0.is_null()
     }
 
@@ -328,6 +328,12 @@ impl<T> ::std::fmt::Pointer for DevicePointer<T> {
         ::std::fmt::Pointer::fmt(&self.0, f)
     }
 }
+impl<T> Clone for DevicePointer<T> {
+    fn clone(&self) -> Self {
+        DevicePointer(self.0)
+    }
+}
+impl<T> Copy for DevicePointer<T> {}
 
 /// A pointer to unified memory.
 ///
@@ -340,7 +346,7 @@ impl<T> ::std::fmt::Pointer for DevicePointer<T> {
 /// `UnifiedPointer` through an FFI boundary to C code expecting a `*mut T`. It is
 /// thus possible to pass a `UnifiedPointer` to a CUDA kernel written in C.
 #[repr(transparent)]
-#[derive(Debug, Hash, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct UnifiedPointer<T: DeviceCopy>(*mut T);
 unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 impl<T: DeviceCopy> UnifiedPointer<T> {
@@ -394,7 +400,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     cuda_free_unified(unified_ptr);
     /// }
     /// ```
-    pub fn as_raw(&self) -> *const T {
+    pub fn as_raw(self) -> *const T {
         self.0
     }
 
@@ -429,7 +435,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     assert!(UnifiedPointer::wrap(null).is_null());
     /// }
     /// ```
-    pub fn is_null(&self) -> bool {
+    pub fn is_null(self) -> bool {
         self.0.is_null()
     }
 
@@ -660,3 +666,4 @@ impl<T: DeviceCopy> Clone for UnifiedPointer<T> {
         UnifiedPointer(self.0)
     }
 }
+impl<T: DeviceCopy> Copy for UnifiedPointer<T> {}

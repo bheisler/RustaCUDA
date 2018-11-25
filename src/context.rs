@@ -105,8 +105,9 @@
 
 use cuda_sys::cuda::{self, CUcontext};
 use device::Device;
-use error::{CudaResult, ToResult};
+use error::{CudaResult, DropResult, ToResult};
 use private::Sealed;
+use std::mem;
 use std::mem::transmute;
 use std::ptr;
 use CudaApiVersion;
@@ -304,12 +305,59 @@ impl Context {
     pub fn get_unowned(&self) -> UnownedContext {
         UnownedContext { inner: self.inner }
     }
+
+    /// Destroy a `Context`, returning an error.
+    ///
+    /// Destroying a context can return errors from previous asynchronous work. This function
+    /// destroys the given context and returns the error and the un-destroyed context on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # use rustacuda;
+    /// # use rustacuda::device::Device;
+    /// # use rustacuda::context::{Context, ContextFlags};
+    /// #
+    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
+    /// # let device = Device::get_device(0).unwrap();
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
+    /// match Context::drop(context) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, ctx)) => {
+    ///         println!("Failed to destroy context: {:?}", e);
+    ///         // Do something with ctx
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut ctx: Context) -> DropResult<Context> {
+        if ctx.inner.is_null() {
+            return Ok(());
+        }
+
+        unsafe {
+            let inner = mem::replace(&mut ctx.inner, ptr::null_mut());
+            match cuda::cuCtxDestroy_v2(inner).toResult() {
+                Ok(()) => {
+                    mem::forget(ctx);
+                    Ok(())
+                }
+                Err(e) => Err((e, Context { inner })),
+            }
+        }
+    }
 }
 impl Drop for Context {
     fn drop(&mut self) {
+        if self.inner.is_null() {
+            return;
+        }
+
         unsafe {
+            let inner = mem::replace(&mut self.inner, ptr::null_mut());
             // No choice but to panic here.
-            cuda::cuCtxDestroy_v2(self.inner).toResult().unwrap();
+            cuda::cuCtxDestroy_v2(inner)
+                .toResult()
+                .expect("Failed to destroy context");
         }
     }
 }

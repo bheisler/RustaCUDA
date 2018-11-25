@@ -14,6 +14,7 @@ pub enum CudaError {
 }
 
 pub type CudaResult<T> = Result<T, CudaError>;
+pub type DropResult<T> = Result<(), (CudaError, T)>;
 pub(crate) trait ToResult {
     fn toResult(self) -> CudaResult<()>;
 }

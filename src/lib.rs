@@ -46,8 +46,8 @@ TODO before announcement:
 - Add a prelude? What should be in it?
     - CopyDestination should be. 
     - Probably DeviceBuffer/DeviceBox or UnifiedBuffer/UnifiedBox or all of those as well.
-- Anything that must be Drop'd should provide an explicit drop function which returns the error
-  instead of double-panicking.
+
+- Write contributor docs and such
 Help wanted:
 - Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
   I haven't been able to manage it.

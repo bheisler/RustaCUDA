@@ -3,7 +3,7 @@
 // TODO: Write better documentation.
 
 use cuda_sys::cuda;
-use error::{CudaResult, ToResult};
+use error::{CudaResult, DropResult, ToResult};
 use function::Function;
 use memory::{CopyDestination, DeviceCopy, DevicePointer};
 use std::ffi::{c_void, CStr};
@@ -146,6 +146,46 @@ impl Module {
             Ok(Function::new(func, self))
         }
     }
+
+    /// Destroy a `Module`, returning an error.
+    ///
+    /// Destroying a module can return errors from previous asynchronous work. This function
+    /// destroys the given module and returns the error and the un-destroyed module on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # let _ctx = quick_init().unwrap();
+    /// use rustacuda::module::Module;
+    /// use std::ffi::CString;
+    ///
+    /// let filename = CString::new("./resources/add.ptx").unwrap();
+    /// let module = Module::load(&filename).unwrap();
+    /// match Module::drop(module) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, module)) => {
+    ///         println!("Failed to destroy module: {:?}", e);
+    ///         // Do something with module
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut module: Module) -> DropResult<Module> {
+        if module.inner.is_null() {
+            return Ok(());
+        }
+
+        unsafe {
+            let inner = mem::replace(&mut module.inner, ptr::null_mut());
+            match cuda::cuModuleUnload(inner).toResult() {
+                Ok(()) => {
+                    mem::forget(module);
+                    Ok(())
+                }
+                Err(e) => Err((e, Module { inner })),
+            }
+        }
+    }
 }
 impl Drop for Module {
     fn drop(&mut self) {
@@ -155,7 +195,9 @@ impl Drop for Module {
         unsafe {
             // No choice but to panic if this fails...
             let module = mem::replace(&mut self.inner, ptr::null_mut());
-            cuda::cuModuleUnload(module).toResult().unwrap();
+            cuda::cuModuleUnload(module)
+                .toResult()
+                .expect("Failed to unload CUDA module");
         }
     }
 }

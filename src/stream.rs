@@ -11,7 +11,7 @@
 //! a stream to be completed.
 
 use cuda_sys::cuda::{self, CUstream};
-use error::{CudaResult, ToResult};
+use error::{CudaResult, DropResult, ToResult};
 use function::Function;
 use std::ffi::c_void;
 use std::mem;
@@ -262,6 +262,44 @@ impl Stream {
             ptr::null_mut(),
         ).toResult()
     }
+
+    /// Destroy a `Stream`, returning an error.
+    ///
+    /// Destroying a stream can return errors from previous asynchronous work. This function
+    /// destroys the given stream and returns the error and the un-destroyed stream on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # let _ctx = quick_init().unwrap();
+    /// use rustacuda::stream::{Stream, StreamFlags};
+    ///
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
+    /// match Stream::drop(stream) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, stream)) => {
+    ///         println!("Failed to destroy stream: {:?}", e);
+    ///         // Do something with stream
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut stream: Stream) -> DropResult<Stream> {
+        if stream.inner.is_null() {
+            return Ok(());
+        }
+
+        unsafe {
+            let inner = mem::replace(&mut stream.inner, ptr::null_mut());
+            match cuda::cuStreamDestroy_v2(inner).toResult() {
+                Ok(()) => {
+                    mem::forget(stream);
+                    Ok(())
+                }
+                Err(e) => Err((e, Stream { inner })),
+            }
+        }
+    }
 }
 impl Drop for Stream {
     fn drop(&mut self) {
@@ -272,7 +310,9 @@ impl Drop for Stream {
         unsafe {
             let inner = mem::replace(&mut self.inner, ptr::null_mut());
             // No choice but to panic here.
-            cuda::cuStreamDestroy_v2(inner).toResult().unwrap();
+            cuda::cuStreamDestroy_v2(inner)
+                .toResult()
+                .expect("Failed to destroy CUDA stream.");
         }
     }
 }

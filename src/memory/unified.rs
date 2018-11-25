@@ -180,11 +180,47 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     {
         unsafe { &mut *UnifiedBox::into_unified(b).as_raw_mut() }
     }
+
+    /// Destroy a `UnifiedBox`, returning an error.
+    ///
+    /// Deallocating unified memory can return errors from previous asynchronous work. This function
+    /// destroys the given box and returns the error and the un-destroyed box on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let x = UnifiedBox::new(5).unwrap();
+    /// match UnifiedBox::drop(x) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, uni_box)) => {
+    ///         println!("Failed to destroy box: {:?}", e);
+    ///         // Do something with uni_box
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut uni_box: UnifiedBox<T>) -> DropResult<UnifiedBox<T>> {
+        if uni_box.ptr.is_null() {
+            return Ok(());
+        }
+
+        let ptr = mem::replace(&mut uni_box.ptr, UnifiedPointer::null());
+        unsafe {
+            match cuda_free_unified(ptr) {
+                Ok(()) => {
+                    mem::forget(uni_box);
+                    Ok(())
+                }
+                Err(e) => Err((e, UnifiedBox { ptr })),
+            }
+        }
+    }
 }
 impl<T: DeviceCopy> Drop for UnifiedBox<T> {
     fn drop(&mut self) {
         if !self.ptr.is_null() {
-            let ptr = ::std::mem::replace(&mut self.ptr, UnifiedPointer::null());
+            let ptr = mem::replace(&mut self.ptr, UnifiedPointer::null());
             // No choice but to panic if this fails.
             unsafe {
                 cuda_free_unified(ptr).expect("Failed to deallocate CUDA Unified memory.");
@@ -413,7 +449,7 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// cannot be invalidated in that manner, but other types may be added in the future which can
     /// reallocate.
     pub fn as_unified_ptr(&mut self) -> UnifiedPointer<T> {
-        self.buf.clone()
+        self.buf
     }
 
     /// Creates a `UnifiedBuffer<T>` directly from the raw components of another unified buffer.
@@ -455,6 +491,47 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     pub unsafe fn from_raw_parts(ptr: UnifiedPointer<T>, capacity: usize) -> UnifiedBuffer<T> {
         UnifiedBuffer { buf: ptr, capacity }
     }
+
+    /// Destroy a `UnifiedBuffer`, returning an error.
+    ///
+    /// Deallocating unified memory can return errors from previous asynchronous work. This function
+    /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let x = UnifiedBuffer::from_slice(&[10u32, 20, 30]).unwrap();
+    /// match UnifiedBuffer::drop(x) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, buf)) => {
+    ///         println!("Failed to destroy buffer: {:?}", e);
+    ///         // Do something with buf
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut uni_buf: UnifiedBuffer<T>) -> DropResult<UnifiedBuffer<T>> {
+        if uni_buf.buf.is_null() {
+            return Ok(());
+        }
+
+        if uni_buf.capacity > 0 && mem::size_of::<T>() > 0 {
+            let capacity = uni_buf.capacity;
+            let ptr = mem::replace(&mut uni_buf.buf, UnifiedPointer::null());
+            unsafe {
+                match cuda_free_unified(ptr) {
+                    Ok(()) => {
+                        mem::forget(uni_buf);
+                        Ok(())
+                    }
+                    Err(e) => Err((e, UnifiedBuffer::from_raw_parts(ptr, capacity))),
+                }
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl<T: DeviceCopy> AsRef<[T]> for UnifiedBuffer<T> {
@@ -487,6 +564,10 @@ impl<T: DeviceCopy> DerefMut for UnifiedBuffer<T> {
 }
 impl<T: DeviceCopy> Drop for UnifiedBuffer<T> {
     fn drop(&mut self) {
+        if self.buf.is_null() {
+            return;
+        }
+
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
             unsafe {

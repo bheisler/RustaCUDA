@@ -184,6 +184,47 @@ impl<T: DeviceCopy> LockedBuffer<T> {
             capacity: size,
         }
     }
+
+    /// Destroy a `LockedBuffer`, returning an error.
+    ///
+    /// Deallocating page-locked memory can return errors from previous asynchronous work. This function
+    /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let x = LockedBuffer::new(&0u64, 5).unwrap();
+    /// match LockedBuffer::drop(x) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, buf)) => {
+    ///         println!("Failed to destroy buffer: {:?}", e);
+    ///         // Do something with buf
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut buf: LockedBuffer<T>) -> DropResult<LockedBuffer<T>> {
+        if buf.buf.is_null() {
+            return Ok(());
+        }
+
+        if buf.capacity > 0 && mem::size_of::<T>() > 0 {
+            let capacity = buf.capacity;
+            let ptr = mem::replace(&mut buf.buf, ptr::null_mut());
+            unsafe {
+                match cuda_free_locked(ptr) {
+                    Ok(()) => {
+                        mem::forget(buf);
+                        Ok(())
+                    }
+                    Err(e) => Err((e, LockedBuffer::from_raw_parts(ptr, capacity))),
+                }
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl<T: DeviceCopy> AsRef<[T]> for LockedBuffer<T> {
@@ -216,6 +257,10 @@ impl<T: DeviceCopy> ops::DerefMut for LockedBuffer<T> {
 }
 impl<T: DeviceCopy> Drop for LockedBuffer<T> {
     fn drop(&mut self) {
+        if self.buf.is_null() {
+            return;
+        }
+
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
             unsafe {

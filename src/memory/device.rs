@@ -1,5 +1,5 @@
 use cuda_sys::cuda;
-use error::{CudaError, CudaResult, ToResult};
+use error::{CudaError, CudaResult, DropResult, ToResult};
 use memory::malloc::{cuda_free, cuda_malloc};
 use memory::DeviceCopy;
 use memory::DevicePointer;
@@ -170,15 +170,53 @@ impl<T> DeviceBox<T> {
         mem::forget(b);
         ptr
     }
+
+    /// Destroy a `DeviceBox`, returning an error.
+    ///
+    /// Deallocating device memory can return errors from previous asynchronous work. This function
+    /// destroys the given box and returns the error and the un-destroyed box on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let x = DeviceBox::new(&5).unwrap();
+    /// match DeviceBox::drop(x) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, dev_box)) => {
+    ///         println!("Failed to destroy box: {:?}", e);
+    ///         // Do something with dev_box
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut dev_box: DeviceBox<T>) -> DropResult<DeviceBox<T>> {
+        if dev_box.ptr.is_null() {
+            return Ok(());
+        }
+
+        let ptr = mem::replace(&mut dev_box.ptr, DevicePointer::null());
+        unsafe {
+            match cuda_free(ptr) {
+                Ok(()) => {
+                    mem::forget(dev_box);
+                    Ok(())
+                }
+                Err(e) => Err((e, DeviceBox { ptr })),
+            }
+        }
+    }
 }
 impl<T> Drop for DeviceBox<T> {
     fn drop(&mut self) {
-        if !self.ptr.is_null() {
-            let ptr = ::std::mem::replace(&mut self.ptr, DevicePointer::null());
-            // No choice but to panic if this fails.
-            unsafe {
-                cuda_free(ptr).expect("Failed to deallocate CUDA memory.");
-            }
+        if self.ptr.is_null() {
+            return;
+        }
+
+        let ptr = mem::replace(&mut self.ptr, DevicePointer::null());
+        // No choice but to panic if this fails.
+        unsafe {
+            cuda_free(ptr).expect("Failed to deallocate CUDA memory.");
         }
     }
 }
@@ -891,6 +929,47 @@ impl<T> DeviceBuffer<T> {
     pub unsafe fn from_raw_parts(ptr: DevicePointer<T>, capacity: usize) -> DeviceBuffer<T> {
         DeviceBuffer { buf: ptr, capacity }
     }
+
+    /// Destroy a `DeviceBuffer`, returning an error.
+    ///
+    /// Deallocating device memory can return errors from previous asynchronous work. This function
+    /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let x = DeviceBuffer::from_slice(&[10, 20, 30]).unwrap();
+    /// match DeviceBuffer::drop(x) {
+    ///     Ok(()) => println!("Successfully destroyed"),
+    ///     Err((e, buf)) => {
+    ///         println!("Failed to destroy buffer: {:?}", e);
+    ///         // Do something with buf
+    ///     },
+    /// }
+    /// ```
+    pub fn drop(mut dev_buf: DeviceBuffer<T>) -> DropResult<DeviceBuffer<T>> {
+        if dev_buf.buf.is_null() {
+            return Ok(());
+        }
+
+        if dev_buf.capacity > 0 && mem::size_of::<T>() > 0 {
+            let capacity = dev_buf.capacity;
+            let ptr = mem::replace(&mut dev_buf.buf, DevicePointer::null());
+            unsafe {
+                match cuda_free(ptr) {
+                    Ok(()) => {
+                        mem::forget(dev_buf);
+                        Ok(())
+                    }
+                    Err(e) => Err((e, DeviceBuffer::from_raw_parts(ptr, capacity))),
+                }
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 impl<T: DeviceCopy> DeviceBuffer<T> {
     /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
@@ -911,7 +990,7 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
     pub fn from_slice(slice: &[T]) -> CudaResult<Self> {
         unsafe {
             let mut uninit = DeviceBuffer::uninitialized(slice.len())?;
-            uninit.copy_from(slice).unwrap();
+            uninit.copy_from(slice)?;
             Ok(uninit)
         }
     }
@@ -938,9 +1017,13 @@ impl<T> DerefMut for DeviceBuffer<T> {
 }
 impl<T> Drop for DeviceBuffer<T> {
     fn drop(&mut self) {
+        if self.buf.is_null() {
+            return;
+        }
+
         if self.capacity > 0 && mem::size_of::<T>() > 0 {
             // No choice but to panic if this fails.
-            let ptr = ::std::mem::replace(&mut self.buf, DevicePointer::null());
+            let ptr = mem::replace(&mut self.buf, DevicePointer::null());
             unsafe {
                 cuda_free(ptr).expect("Failed to deallocate CUDA Device memory.");
             }
