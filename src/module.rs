@@ -40,7 +40,7 @@ impl Module {
                 inner: ptr::null_mut(),
             };
             cuda::cuModuleLoad(&mut module.inner as *mut cuda::CUmodule, filename.as_ptr())
-                .toResult()?;
+                .to_result()?;
             Ok(module)
         }
     }
@@ -72,7 +72,7 @@ impl Module {
             cuda::cuModuleLoadData(
                 &mut module.inner as *mut cuda::CUmodule,
                 image.as_ptr() as *const c_void,
-            ).toResult()?;
+            ).to_result()?;
             Ok(module)
         }
     }
@@ -110,7 +110,7 @@ impl Module {
                 &mut size as *mut usize,
                 self.inner,
                 name.as_ptr(),
-            ).toResult()?;
+            ).to_result()?;
             assert_eq!(size, mem::size_of::<T>());
             Ok(Symbol {
                 ptr: ptr,
@@ -142,7 +142,7 @@ impl Module {
                 &mut func as *mut cuda::CUfunction,
                 self.inner,
                 name.as_ptr(),
-            ).toResult()?;
+            ).to_result()?;
             Ok(Function::new(func, self))
         }
     }
@@ -177,7 +177,7 @@ impl Module {
 
         unsafe {
             let inner = mem::replace(&mut module.inner, ptr::null_mut());
-            match cuda::cuModuleUnload(inner).toResult() {
+            match cuda::cuModuleUnload(inner).to_result() {
                 Ok(()) => {
                     mem::forget(module);
                     Ok(())
@@ -196,7 +196,7 @@ impl Drop for Module {
             // No choice but to panic if this fails...
             let module = mem::replace(&mut self.inner, ptr::null_mut());
             cuda::cuModuleUnload(module)
-                .toResult()
+                .to_result()
                 .expect("Failed to unload CUDA module");
         }
     }
@@ -223,7 +223,7 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
-                ).toResult()?
+                ).to_result()?
             }
         }
         Ok(())
@@ -237,7 +237,7 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,
-                ).toResult()?
+                ).to_result()?
             }
         }
         Ok(())

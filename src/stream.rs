@@ -160,7 +160,7 @@ impl Stream {
                 &mut stream.inner as *mut CUstream,
                 flags.bits(),
                 priority.unwrap_or(0),
-            ).toResult()?;
+            ).to_result()?;
             Ok(stream)
         }
     }
@@ -180,7 +180,7 @@ impl Stream {
     pub fn get_flags(&self) -> CudaResult<StreamFlags> {
         unsafe {
             let mut bits = 0u32;
-            cuda::cuStreamGetFlags(self.inner, &mut bits as *mut u32).toResult()?;
+            cuda::cuStreamGetFlags(self.inner, &mut bits as *mut u32).to_result()?;
             Ok(StreamFlags::from_bits_truncate(bits))
         }
     }
@@ -204,7 +204,7 @@ impl Stream {
     pub fn get_priority(&self) -> CudaResult<i32> {
         unsafe {
             let mut priority = 0i32;
-            cuda::cuStreamGetPriority(self.inner, &mut priority as *mut i32).toResult()?;
+            cuda::cuStreamGetPriority(self.inner, &mut priority as *mut i32).to_result()?;
             Ok(priority)
         }
     }
@@ -228,7 +228,7 @@ impl Stream {
     /// stream.synchronize().unwrap();
     /// ```
     pub fn synchronize(&self) -> CudaResult<()> {
-        unsafe { cuda::cuStreamSynchronize(self.inner).toResult() }
+        unsafe { cuda::cuStreamSynchronize(self.inner).to_result() }
     }
 
     // Hidden implementation detail function. Highly unsafe. Use the `launch!` macro instead.
@@ -260,7 +260,7 @@ impl Stream {
             self.inner,
             args.as_ptr() as *mut _,
             ptr::null_mut(),
-        ).toResult()
+        ).to_result()
     }
 
     /// Destroy a `Stream`, returning an error.
@@ -291,7 +291,7 @@ impl Stream {
 
         unsafe {
             let inner = mem::replace(&mut stream.inner, ptr::null_mut());
-            match cuda::cuStreamDestroy_v2(inner).toResult() {
+            match cuda::cuStreamDestroy_v2(inner).to_result() {
                 Ok(()) => {
                     mem::forget(stream);
                     Ok(())
@@ -311,7 +311,7 @@ impl Drop for Stream {
             let inner = mem::replace(&mut self.inner, ptr::null_mut());
             // No choice but to panic here.
             cuda::cuStreamDestroy_v2(inner)
-                .toResult()
+                .to_result()
                 .expect("Failed to destroy CUDA stream.");
         }
     }

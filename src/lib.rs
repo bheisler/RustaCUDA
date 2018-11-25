@@ -34,7 +34,6 @@ use error::{CudaResult, ToResult};
 
 /*
 TODO before announcement:
-- Figure out an error-handling story
 - Document this module. Just do a pass or two over the documentation and examples in general.
 - Write the user guide
     - Basic example
@@ -84,7 +83,7 @@ bitflags! {
 /// The `flags` parameter is used to configure the CUDA API. Currently no flags are defined, so
 /// it must be `CudaFlags::empty()`.
 pub fn init(flags: CudaFlags) -> CudaResult<()> {
-    unsafe { cuInit(flags.bits()).toResult() }
+    unsafe { cuInit(flags.bits()).to_result() }
 }
 
 /// Shortcut for initializing the CUDA Driver API and creating a CUDA context with default settings
@@ -109,7 +108,7 @@ impl CudaApiVersion {
     pub fn get() -> CudaResult<CudaApiVersion> {
         unsafe {
             let mut version: i32 = 0;
-            cuDriverGetVersion(&mut version as *mut i32).toResult()?;
+            cuDriverGetVersion(&mut version as *mut i32).to_result()?;
             Ok(CudaApiVersion { version })
         }
     }

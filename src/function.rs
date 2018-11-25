@@ -80,7 +80,7 @@ impl<'a> Function<'a> {
                 // This should be safe, as the repr and values of FunctionAttribute should match.
                 ::std::mem::transmute(attr),
                 self.inner,
-            ).toResult()?;
+            ).to_result()?;
             Ok(val)
         }
     }
@@ -111,7 +111,7 @@ impl<'a> Function<'a> {
     /// function.set_cache_config(CacheConfig::PreferL1).unwrap();
     /// ```
     pub fn set_cache_config(&mut self, config: CacheConfig) -> CudaResult<()> {
-        unsafe { cuda::cuFuncSetCacheConfig(self.inner, transmute(config)).toResult() }
+        unsafe { cuda::cuFuncSetCacheConfig(self.inner, transmute(config)).to_result() }
     }
 
     /// Sets the preferred shared memory configuration for this function.
@@ -135,7 +135,7 @@ impl<'a> Function<'a> {
     /// function.set_shared_memory_config(SharedMemoryConfig::EightByteBankSize).unwrap();
     /// ```
     pub fn set_shared_memory_config(&mut self, cfg: SharedMemoryConfig) -> CudaResult<()> {
-        unsafe { cuda::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).toResult() }
+        unsafe { cuda::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).to_result() }
     }
 
     pub(crate) fn to_inner(&self) -> CUfunction {

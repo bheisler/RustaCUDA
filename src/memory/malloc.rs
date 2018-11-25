@@ -45,7 +45,7 @@ pub unsafe fn cuda_malloc<T>(count: usize) -> CudaResult<DevicePointer<T>> {
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cuda::cuMemAlloc_v2(&mut ptr as *mut *mut c_void as *mut u64, size).toResult()?;
+    cuda::cuMemAlloc_v2(&mut ptr as *mut *mut c_void as *mut u64, size).to_result()?;
     let ptr = ptr as *mut T;
     Ok(DevicePointer::wrap(ptr as *mut T))
 }
@@ -94,7 +94,7 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
         &mut ptr as *mut *mut c_void as *mut u64,
         size,
         cuda::CUmemAttach_flags_enum::CU_MEM_ATTACH_GLOBAL as u32,
-    ).toResult()?;
+    ).to_result()?;
     let ptr = ptr as *mut T;
     Ok(UnifiedPointer::wrap(ptr as *mut T))
 }
@@ -128,7 +128,7 @@ pub unsafe fn cuda_free<T>(mut p: DevicePointer<T>) -> CudaResult<()> {
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFree_v2(ptr as u64).toResult()?;
+    cuda::cuMemFree_v2(ptr as u64).to_result()?;
     Ok(())
 }
 
@@ -161,7 +161,7 @@ pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> Cuda
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFree_v2(ptr as u64).toResult()?;
+    cuda::cuMemFree_v2(ptr as u64).to_result()?;
     Ok(())
 }
 
@@ -203,7 +203,7 @@ pub unsafe fn cuda_malloc_locked<T>(count: usize) -> CudaResult<*mut T> {
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cuda::cuMemAllocHost_v2(&mut ptr as *mut *mut c_void, size).toResult()?;
+    cuda::cuMemAllocHost_v2(&mut ptr as *mut *mut c_void, size).to_result()?;
     let ptr = ptr as *mut T;
     Ok(ptr as *mut T)
 }
@@ -236,7 +236,7 @@ pub unsafe fn cuda_free_locked<T>(ptr: *mut T) -> CudaResult<()> {
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFreeHost(ptr as *mut c_void).toResult()?;
+    cuda::cuMemFreeHost(ptr as *mut c_void).to_result()?;
     Ok(())
 }
 

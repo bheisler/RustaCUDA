@@ -234,7 +234,7 @@ impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
-                ).toResult()?
+                ).to_result()?
             }
         }
         Ok(())
@@ -248,7 +248,7 @@ impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,
-                ).toResult()?
+                ).to_result()?
             }
         }
         Ok(())
@@ -260,7 +260,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         if size != 0 {
             unsafe {
                 cuda::cuMemcpyDtoD_v2(self.ptr.as_raw_mut() as u64, val.ptr.as_raw() as u64, size)
-                    .toResult()?
+                    .to_result()?
             }
         }
         Ok(())
@@ -271,7 +271,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
         if size != 0 {
             unsafe {
                 cuda::cuMemcpyDtoD_v2(val.ptr.as_raw_mut() as u64, self.ptr.as_raw() as u64, size)
-                    .toResult()?
+                    .to_result()?
             }
         }
         Ok(())
@@ -783,7 +783,7 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
                     self.0.as_mut_ptr() as u64,
                     val.as_ptr() as *const c_void,
                     size,
-                ).toResult()?
+                ).to_result()?
             }
         }
         Ok(())
@@ -799,7 +799,7 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
         if size != 0 {
             unsafe {
                 cuda::cuMemcpyDtoH_v2(val.as_mut_ptr() as *mut c_void, self.as_ptr() as u64, size)
-                    .toResult()?
+                    .to_result()?
             }
         }
         Ok(())
@@ -815,7 +815,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         if size != 0 {
             unsafe {
                 cuda::cuMemcpyDtoD_v2(self.0.as_mut_ptr() as u64, val.as_ptr() as u64, size)
-                    .toResult()?
+                    .to_result()?
             }
         }
         Ok(())
@@ -830,7 +830,7 @@ impl<T: DeviceCopy> CopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
         if size != 0 {
             unsafe {
                 cuda::cuMemcpyDtoD_v2(val.as_mut_ptr() as u64, self.as_ptr() as u64, size)
-                    .toResult()?
+                    .to_result()?
             }
         }
         Ok(())

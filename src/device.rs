@@ -218,7 +218,7 @@ impl Device {
     pub fn num_devices() -> CudaResult<u32> {
         unsafe {
             let mut num_devices = 0i32;
-            cuDeviceGetCount(&mut num_devices as *mut i32).toResult()?;
+            cuDeviceGetCount(&mut num_devices as *mut i32).to_result()?;
             Ok(num_devices as u32)
         }
     }
@@ -238,7 +238,7 @@ impl Device {
     pub fn get_device(ordinal: u32) -> CudaResult<Device> {
         unsafe {
             let mut device = Device { device: 0 };
-            cuDeviceGet(&mut device.device as *mut CUdevice, ordinal as i32).toResult()?;
+            cuDeviceGet(&mut device.device as *mut CUdevice, ordinal as i32).to_result()?;
             Ok(device)
         }
     }
@@ -274,7 +274,7 @@ impl Device {
     pub fn total_memory(self) -> CudaResult<usize> {
         unsafe {
             let mut memory = 0;
-            cuDeviceTotalMem_v2(&mut memory as *mut usize, self.device).toResult()?;
+            cuDeviceTotalMem_v2(&mut memory as *mut usize, self.device).to_result()?;
             Ok(memory)
         }
     }
@@ -292,7 +292,7 @@ impl Device {
     pub fn name(self) -> CudaResult<String> {
         unsafe {
             let mut name = [0u8; 128]; // Hopefully this is big enough...
-            cuDeviceGetName(&mut name[0] as *mut u8 as *mut i8, 128, self.device).toResult()?;
+            cuDeviceGetName(&mut name[0] as *mut u8 as *mut i8, 128, self.device).to_result()?;
             let cstr = CStr::from_bytes_with_nul_unchecked(&name);
             Ok(cstr.to_string_lossy().into_owned())
         }
@@ -317,7 +317,7 @@ impl Device {
                 // This should be safe, as the repr and values of DeviceAttribute should match.
                 ::std::mem::transmute(attr),
                 self.device,
-            ).toResult()?;
+            ).to_result()?;
             Ok(val)
         }
     }

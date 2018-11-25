@@ -60,7 +60,7 @@ fn main() {
     out_2.copy_to(&mut out_host[10..20]).unwrap();
 
     for x in out_host.iter() {
-        assert_eq!(3.0, *x);
+        assert_eq!(3.0 as u32, *x as u32);
     }
 
     println!("Launched kernel successfully.");
