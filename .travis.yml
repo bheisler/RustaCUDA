@@ -1,0 +1,41 @@
+sudo: true
+
+language: rust
+
+cache: cargo
+
+dist: xenial
+
+rust:
+  - stable
+
+os:
+  - linux
+
+matrix:
+  include:
+    - os: linux
+    - os: linux
+      env: DOCS=yes
+    - os: linux
+      env: RUSTFMT=yes
+    - os: linux
+      env: CLIPPY=yes
+
+install:
+  - bash ci/install.sh
+
+script:
+  - bash ci/script.sh
+
+env:
+  global:
+    - CUDA_LIBRARY_PATH=/usr/local/cuda-8.0/targets/x86_64-linux/lib:/usr/local/cuda-8.0/targets/x86_64-linux/lib/stubs
+    - secure: qco+CoqBkSWfYlpsoXOnc1MhpSPzQl6TfnnlfYdPT9FA4i5Wwcy1j2oDsz4uaksJjTTAqwLyIgGlLjEsalqJUtb1vBvVOAEyJP5rpJvvdEgK3VbH0ZpwwTp4oqrsfQu+0x3ubP4gP1NEpOB6Puuq81wCvxw/m3WmxuyKt9wNvzrs+v13ezbkwrfbsSrtRD4gG5KuYTpjkU93fdxjn4toNDdzirjs7SBcmyyyCSWhHPs/Go4sfABGIKNdBVoKVR9Qr+vDKkULcq6Vq62iIQ0bR2JFLP2PIqvjQtG3ccN73IArjgLcupOBK6TC0/JivPkFtTYPrvPPvlwtirjwFeTYiY5fGn++TaVrRGYyz3sVuXOJX2KnKwoxsboG1osaYSJjOvsYJdFp0HBLaL7Xa6gP6sC/s9gB1CO9gqTgO8a14e+1fpKeJibalX2V+e7BxW4qe06FSuj0yCmc6r/HmNw5CqibxDyWVrrLVSCPGUGoTgroVQAqh+ULpoNMNVGT3EV3GBdG6Gd1s84I6SACH1Ni06XN3Z2tk0AR1l6ftV4tqGBortepkitnEc+XVFUgIgof+of99wqz/haouU9tXq3cWN+NPE05wVK6hjbbI1+mX8ZnxhCV7ngYHi7xHj61ctcVyJVVvCxreXt74vsqNY2+NZPjxjbuqBNPyaUoCVsb3dA=
+
+branches:
+  only: master
+
+notifications:
+  email:
+    on_success: never

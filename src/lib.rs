@@ -174,21 +174,6 @@ TODO before announcement:
 - Rework path tracer to use RustaCUDA
 - Write up the announcement post
 - Write contributor docs and such
-Help wanted:
-- Perhaps somebody smarter than I am can think of a way to make the context management truly safe.
-  I haven't been able to manage it.
-- Which types should implement Send/Sync?
-- What should be #[inline]'d?
-- Implement the rest of the driver API:
-    - Asynchronous memcpy
-    - Events
-    - Primary contexts
-    - JIT linking
-    - CUDA arrays
-    - textures
-    - surfaces (what even is this stuff?)
-    - Unified memory prefetching, advising, attributes
-    - More
 */
 
 bitflags! {
