@@ -12,94 +12,10 @@
 
 use cuda_sys::cuda::{self, CUstream};
 use error::{CudaResult, DropResult, ToResult};
-use function::Function;
+use function::{BlockSize, Function, GridSize};
 use std::ffi::c_void;
 use std::mem;
 use std::ptr;
-
-/// Dimensions of a grid, or the number of thread blocks in a kernel launch.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GridSize {
-    /// Width of grid in blocks
-    pub x: u32,
-    /// Height of grid in blocks
-    pub y: u32,
-    /// Depth of grid in blocks
-    pub z: u32,
-}
-impl GridSize {
-    /// Create a one-dimensional grid of `x` blocks
-    pub fn x(x: u32) -> GridSize {
-        GridSize { x, y: 1, z: 1 }
-    }
-
-    /// Create a two-dimensional grid of `x * y` blocks
-    pub fn xy(x: u32, y: u32) -> GridSize {
-        GridSize { x, y, z: 1 }
-    }
-
-    /// Create a three-dimensional grid of `x * y * z` blocks
-    pub fn xyz(x: u32, y: u32, z: u32) -> GridSize {
-        GridSize { x, y, z }
-    }
-}
-impl From<u32> for GridSize {
-    fn from(x: u32) -> GridSize {
-        GridSize::x(x)
-    }
-}
-impl From<(u32, u32)> for GridSize {
-    fn from((x, y): (u32, u32)) -> GridSize {
-        GridSize::xy(x, y)
-    }
-}
-impl From<(u32, u32, u32)> for GridSize {
-    fn from((x, y, z): (u32, u32, u32)) -> GridSize {
-        GridSize::xyz(x, y, z)
-    }
-}
-
-/// Dimensions of a thread block, or the number of threads in a block.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlockSize {
-    /// X dimension of each thread block
-    pub x: u32,
-    /// Y dimension of each thread block
-    pub y: u32,
-    /// Z dimension of each thread block
-    pub z: u32,
-}
-impl BlockSize {
-    /// Create a one-dimensional block of `x` threads
-    pub fn x(x: u32) -> BlockSize {
-        BlockSize { x, y: 1, z: 1 }
-    }
-
-    /// Create a two-dimensional block of `x * y` threads
-    pub fn xy(x: u32, y: u32) -> BlockSize {
-        BlockSize { x, y, z: 1 }
-    }
-
-    /// Create a three-dimensional block of `x * y * z` threads
-    pub fn xyz(x: u32, y: u32, z: u32) -> BlockSize {
-        BlockSize { x, y, z }
-    }
-}
-impl From<u32> for BlockSize {
-    fn from(x: u32) -> BlockSize {
-        BlockSize::x(x)
-    }
-}
-impl From<(u32, u32)> for BlockSize {
-    fn from((x, y): (u32, u32)) -> BlockSize {
-        BlockSize::xy(x, y)
-    }
-}
-impl From<(u32, u32, u32)> for BlockSize {
-    fn from((x, y, z): (u32, u32, u32)) -> BlockSize {
-        BlockSize::xyz(x, y, z)
-    }
-}
 
 bitflags! {
     /// Bit flags for configuring a CUDA Stream.

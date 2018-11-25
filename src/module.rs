@@ -1,6 +1,6 @@
-//! This module provides functions for loading and working with CUDA modules.
-
-// TODO: Write better documentation.
+//! Functions and types for working with CUDA modules.
+//!
+//!
 
 use cuda_sys::cuda;
 use error::{CudaResult, DropResult, ToResult};

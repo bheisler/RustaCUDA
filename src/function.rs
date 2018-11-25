@@ -7,6 +7,90 @@ use module::Module;
 use std::marker::PhantomData;
 use std::mem::transmute;
 
+/// Dimensions of a grid, or the number of thread blocks in a kernel launch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GridSize {
+    /// Width of grid in blocks
+    pub x: u32,
+    /// Height of grid in blocks
+    pub y: u32,
+    /// Depth of grid in blocks
+    pub z: u32,
+}
+impl GridSize {
+    /// Create a one-dimensional grid of `x` blocks
+    pub fn x(x: u32) -> GridSize {
+        GridSize { x, y: 1, z: 1 }
+    }
+
+    /// Create a two-dimensional grid of `x * y` blocks
+    pub fn xy(x: u32, y: u32) -> GridSize {
+        GridSize { x, y, z: 1 }
+    }
+
+    /// Create a three-dimensional grid of `x * y * z` blocks
+    pub fn xyz(x: u32, y: u32, z: u32) -> GridSize {
+        GridSize { x, y, z }
+    }
+}
+impl From<u32> for GridSize {
+    fn from(x: u32) -> GridSize {
+        GridSize::x(x)
+    }
+}
+impl From<(u32, u32)> for GridSize {
+    fn from((x, y): (u32, u32)) -> GridSize {
+        GridSize::xy(x, y)
+    }
+}
+impl From<(u32, u32, u32)> for GridSize {
+    fn from((x, y, z): (u32, u32, u32)) -> GridSize {
+        GridSize::xyz(x, y, z)
+    }
+}
+
+/// Dimensions of a thread block, or the number of threads in a block.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockSize {
+    /// X dimension of each thread block
+    pub x: u32,
+    /// Y dimension of each thread block
+    pub y: u32,
+    /// Z dimension of each thread block
+    pub z: u32,
+}
+impl BlockSize {
+    /// Create a one-dimensional block of `x` threads
+    pub fn x(x: u32) -> BlockSize {
+        BlockSize { x, y: 1, z: 1 }
+    }
+
+    /// Create a two-dimensional block of `x * y` threads
+    pub fn xy(x: u32, y: u32) -> BlockSize {
+        BlockSize { x, y, z: 1 }
+    }
+
+    /// Create a three-dimensional block of `x * y * z` threads
+    pub fn xyz(x: u32, y: u32, z: u32) -> BlockSize {
+        BlockSize { x, y, z }
+    }
+}
+impl From<u32> for BlockSize {
+    fn from(x: u32) -> BlockSize {
+        BlockSize::x(x)
+    }
+}
+impl From<(u32, u32)> for BlockSize {
+    fn from((x, y): (u32, u32)) -> BlockSize {
+        BlockSize::xy(x, y)
+    }
+}
+impl From<(u32, u32, u32)> for BlockSize {
+    fn from((x, y, z): (u32, u32, u32)) -> BlockSize {
+        BlockSize::xyz(x, y, z)
+    }
+}
+
 /// All supported function attributes for [Function::get_attribute](struct.Function.html#method.get_attribute)
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -161,13 +245,13 @@ impl<'a> Function<'a> {
 /// stream parameters are not optional. The shared memory size is a number of bytes per thread for
 /// dynamic shared memory (Note that this uses `extern __shared__ int x[]` in CUDA C, not the
 /// fixed-length arrays created by `__shared__ int x[64]`. This will usually be zero.).
-/// `stream` must be the name of a [`Stream`](struct.Stream.html) value.
-/// `grid` can be any value which implements `Into<[GridSize](struct.GridSize.html)>` (such as
+/// `stream` must be the name of a [`Stream`](stream/struct.Stream.html) value.
+/// `grid` can be any value which implements [`Into<GridSize>`](function/struct.GridSize.html) (such as
 /// `u32` values, tuples of up to three `u32` values, and GridSize structures) and likewise `block`
-/// can be any value that implements `Into<[BlockSize](struct.BlockSize.html)>`.
+/// can be any value that implements [`Into<BlockSize>`](function/struct.BlockSize.html).
 ///
-/// NOTE: due to some limitations of Rust's macro system, `module` and `stream` must be variable
-/// names. Paths or function calls will not work.
+/// NOTE: due to some limitations of Rust's macro system, `module` and `stream` must be local
+/// variable names. Paths or function calls will not work.
 ///
 /// The second form is similar:
 ///
@@ -220,6 +304,10 @@ impl<'a> Function<'a> {
 ///         out_1.as_device_ptr(),
 ///         out_1.len()
 ///     ));
+///     // `launch!` returns an error in case anything went wrong with the launch itself, but
+///     // kernel launches are asynchronous so errors caused by the kernel (eg. invalid memory
+///     // access) will show up later at some other CUDA API call (probably at `synchronize()`
+///     // below).
 ///     result.unwrap();
 ///
 ///     // Launch the kernel again using the `function` form:
