@@ -6,6 +6,12 @@
     <a href="https://bheisler.github.io/RustaCUDA/rustacuda/index.html">API Documentation (master branch)</a>
 </div>
 
+<div align="center">
+	<a href="https://travis-ci.org/bheisler/RustaCUDA">
+        <img src="https://travis-ci.org/bheisler/RustaCUDA.svg?branch=master" alt="Travis-CI">
+    </a>
+</div>
+
 RustaCUDA helps you bring GPU-acceleration to your projects by providing a high-level, easy-to-use
 interface to the CUDA GPU computing toolkit. Bring the power and safety of Rust to a whole new
 level of performance!

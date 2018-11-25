@@ -1,12 +1,16 @@
 [package]
 name = "rustacuda_macros"
 version = "0.1.0"
-authors = ["Brook Heisler <redattack34@gmail.com>"]
+authors = ["Brook Heisler <brookheisler@gmail.com>"]
+
+description = "Custom Derive Macro for Rustacuda"
+repository = "https://github.com/bheisler/rustacuda"
+license = "Apache-2.0/MIT"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = "0.15.18"
-quote = "0.6.9"
-proc-macro2 = "0.4.20"
+syn = "0.15"
+quote = "0.6"
+proc-macro2 = "0.4"

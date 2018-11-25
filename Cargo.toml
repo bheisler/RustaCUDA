@@ -1,7 +1,12 @@
 [package]
 name = "rustacuda"
 version = "0.1.0"
-authors = ["Brook Heisler <redattack34@gmail.com>"]
+authors = ["Brook Heisler <brookheisler@gmail.com>"]
+
+description = "CUDA Driver API Wrapper"
+repository = "https://github.com/bheisler/rustacuda"
+readme = "README.md"
+license = "Apache-2.0/MIT"
 
 [dependencies]
 cuda-sys = "0.2"

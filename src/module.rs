@@ -113,7 +113,7 @@ impl Module {
             ).to_result()?;
             assert_eq!(size, mem::size_of::<T>());
             Ok(Symbol {
-                ptr: ptr,
+                ptr,
                 module: PhantomData,
             })
         }
