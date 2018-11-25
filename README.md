@@ -22,7 +22,7 @@ level of performance!
  The primary design goals are:
 
  - __High-Level__: Using RustaCUDA should feel familiar and intuitive for Rust programmers.
-  - __Easy-to-Use__: RustaCUDA should be well-documented and well-designed enough to help novice GPU programmers get started, while not limiting more experienced folks too much.
+ - __Easy-to-Use__: RustaCUDA should be well-documented and well-designed enough to help novice GPU programmers get started, while not limiting more experienced folks too much.
  - __Safe__: Many aspects of GPU-accelerated computing are difficult to reconcile with Rust's safety guarantees, but RustaCUDA should provide the safest interface that is reasonably practical.
  - __Fast__: RustaCUDA should aim to be as fast as possible, where it doesn't conflict with the other goals.
 

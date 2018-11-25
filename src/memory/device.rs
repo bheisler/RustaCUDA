@@ -171,6 +171,23 @@ impl<T> DeviceBox<T> {
         ptr
     }
 
+    /// Returns the contained device pointer without consuming the box.
+    ///
+    /// This is useful for passing the box to a kernel launch.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let mut x = DeviceBox::new(&5).unwrap();
+    /// let ptr = x.as_device_ptr();
+    /// println!("{:p}", ptr);
+    /// ```
+    pub fn as_device_ptr(&mut self) -> DevicePointer<T> {
+        self.ptr
+    }
+
     /// Destroy a `DeviceBox`, returning an error.
     ///
     /// Deallocating device memory can return errors from previous asynchronous work. This function

@@ -162,6 +162,23 @@ impl<T: DeviceCopy> UnifiedBox<T> {
         ptr
     }
 
+    /// Returns the contained unified pointer without consuming the box.
+    ///
+    /// This is useful for passing the box to a kernel launch.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let mut x = UnifiedBox::new(5).unwrap();
+    /// let ptr = x.as_unified_ptr();
+    /// println!("{:p}", ptr);
+    /// ```
+    pub fn as_unified_ptr(&mut self) -> UnifiedPointer<T> {
+        self.ptr
+    }
+
     /// Consumes and leaks the UnifiedBox, returning a mutable reference, &'a mut T. Note that the type T
     /// must outlive the chosen lifetime 'a. If the type has only static references, or none at all,
     /// this may be chosen to be 'static.

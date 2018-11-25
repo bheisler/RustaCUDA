@@ -1,3 +1,139 @@
+//! This crate provides a safe, user-friendly wrapper around the CUDA Driver API.
+//!
+//! # CUDA Terminology:
+//!
+//! ## Devices and Hosts:
+//!
+//! This crate and its documentation uses the terms "device" and "host" frequently, so it's worth
+//! explaining them in more detail. A device refers to a CUDA-capable GPU or similar device and its
+//! associated external memory space. The host is the CPU and its associated memory space. Data
+//! must be transferred from host memory to device memory before the device can use it for
+//! computations, and the results must then be transferred back to host memory.
+//!
+//! ## Contexts, Modules, Streams and Functions:
+//!
+//! A CUDA context is akin to a process on the host - it contains all of the state for working with
+//! a device, all memory allocations, etc. Each context is associated with a single device.
+//!
+//! A Module is similar to a shared-object library - it is a piece of compiled code which exports
+//! functions and global values. Functions can be loaded from modules and launched on a device as
+//! one might load a function from a shared-object file and call it. Functions are also known as
+//! kernels and the two terms will be used interchangeably.
+//!
+//! A Stream is akin to a thread - asynchronous work such as kernel execution can be queued into a
+//! stream. Work within a single stream will execute sequentially in the order that it was
+//! submitted, and may interleave with work from other streams.
+//!
+//! ## Grids, Blocks and Threads:
+//!
+//! CUDA devices typically execute kernel functions on many threads in parallel. These threads can
+//! be grouped into thread blocks, which share an area of fast hardware memory known as shared
+//! memory. Thread blocks can be one-, two-, or three-dimensional, which is helpful when working
+//! with multi-dimensional data such as images. Thread blocks are then grouped into grids, which
+//! can also be one-, two-, or three-dimensional.
+//!
+//! CUDA devices often contain multiple separate processors. Each processor is capable of excuting
+//! many threads simultaneously, but they must be from the same thread block. Thus, it is important
+//! to ensure that the grid size is large enough to provide work for all processors. On the other
+//! hand, if the thread blocks are too small each processor will be under-utilized and the
+//! code will be unable to make effective use of shared memory.
+//!
+//! # Usage:
+//!
+//! Before using RustaCUDA, you must install the CUDA development headers for your system. Version
+//! 8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
+//! drivers.
+//!
+//! Add the following to your `Cargo.toml`:
+//!
+//! ```text
+//! [dependencies]
+//! rustacuda = "0.1"
+//! rustacuda_macros = "0.1"
+//! ```
+//!
+//! And this to your crate root:
+//!
+//! ```text
+//! #[macro_use]
+//! extern crate rustacuda;
+//! #[macro_use]
+//! extern crate rustacuda_macros;
+//! ```
+//!
+//! Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
+//!
+//! ```text
+//! export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
+//! ```
+//!
+//! # Examples:
+//!
+//! ## Adding two numbers on the device:
+//!
+//! First, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
+//! the resources directory for your application.
+//!
+//! ```
+//! #[macro_use]
+//! extern crate rustacuda;
+//!
+//! use rustacuda::*;
+//! use rustacuda::device::*;
+//! use rustacuda::stream::*;
+//! use rustacuda::module::*;
+//! use rustacuda::context::*;
+//! use rustacuda::memory::*;
+//! use std::error::Error;
+//! use std::ffi::CString;
+//!
+//! fn main() -> Result<(), Box<Error>> {
+//!     // Initialize the CUDA API
+//!     rustacuda::init(CudaFlags::empty())?;
+//!     
+//!     // Get the first device
+//!     let device = Device::get_device(0)?;
+//!
+//!     // Create a context associated to this device
+//!     let context = Context::create_and_push(
+//!         ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+//!
+//!     let module_data = CString::new(include_str!("../resources/add.ptx"))?;
+//!     let module = Module::load_data(&module_data)?;
+//!
+//!     let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+//!
+//!     // Allocate space on the device and copy numbers to it.
+//!     let mut x = DeviceBox::new(&10.0f32)?;
+//!     let mut y = DeviceBox::new(&20.0f32)?;
+//!     let mut result = DeviceBox::new(&0.0f32)?;
+//!
+//!     // Launching kernels is unsafe since Rust can't enforce safety - think of kernel launches
+//!     // as a foreign-function call. In this case, it is - this kernel is written in CUDA C.
+//!     unsafe {
+//!         // Launch the `sum` function with one block containing one thread on the given stream.
+//!         launch!(module.sum<<<1, 1, 0, stream>>>(
+//!             x.as_device_ptr(),
+//!             y.as_device_ptr(),
+//!             result.as_device_ptr(),
+//!             1 // Length
+//!         ))?;
+//!     }
+//!
+//!     // The kernel launch is asynchronous, so we wait for the kernel to finish executing
+//!     stream.synchronize()?;
+//!
+//!     // Copy the result back to the host
+//!     let mut result_host = 0.0f32;
+//!     result.copy_to(&mut result_host)?;
+//!     
+//!     println!("Sum is {}", result_host);
+//! #   assert_eq!(30, result_host as u32);
+//!
+//!     Ok(())
+//! }
+//! ```
+
 #![warn(
     missing_docs,
     missing_debug_implementations,
@@ -17,12 +153,10 @@ extern crate cuda_sys;
 pub mod context;
 pub mod device;
 pub mod error;
+pub mod function;
 pub mod memory;
 pub mod module;
 pub mod stream;
-
-#[macro_export]
-pub mod function;
 
 mod derive_compile_fail;
 
@@ -33,7 +167,6 @@ use error::{CudaResult, ToResult};
 
 /*
 TODO before announcement:
-- Document this module. Just do a pass or two over the documentation and examples in general.
 - Write the user guide
     - Basic example
     - Using nvcc to compile kernels
