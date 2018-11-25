@@ -142,3 +142,174 @@ impl<'a> Function<'a> {
         self.inner
     }
 }
+
+/// Launch a kernel function asynchronously.
+///
+/// # Syntax:
+///
+/// The format of this macro is designed to resemble the triple-chevron syntax used to launch
+/// kernels in CUDA C. There are two forms available:
+///
+/// ```ignore
+/// let result = launch!(module.function_name<<<grid, block, shared_memory_size, stream>>>(parameter1, parameter2...));
+/// ```
+///
+/// This will load a kernel called `function_name` from the module `module` and launch it with
+/// the given grid/block size on the given stream. Unlike in CUDA C, the shared memory size and
+/// stream parameters are not optional. The shared memory size is a number of bytes per thread for
+/// dynamic shared memory (Note that this uses `extern __shared__ int x[]` in CUDA C, not the
+/// fixed-length arrays created by `__shared__ int x[64]`. This will usually be zero.).
+/// `stream` must be the name of a [`Stream`](struct.Stream.html) value.
+/// `grid` can be any value which implements `Into<[GridSize](struct.GridSize.html)>` (such as
+/// `u32` values, tuples of up to three `u32` values, and GridSize structures) and likewise `block`
+/// can be any value that implements `Into<[BlockSize](struct.BlockSize.html)>`.
+///
+/// NOTE: due to some limitations of Rust's macro system, `module` and `stream` must be variable
+/// names. Paths or function calls will not work.
+///
+/// The second form is similar:
+///
+/// ```ignore
+/// let result = launch!(function<<<grid, block, shared_memory_size, stream>>>(parameter1, parameter2...));
+/// ```
+///
+/// In this variant, the `function` parameter must be a variable. Use this form to avoid looking up
+/// the kernel function for each call.
+///
+/// # Safety:
+///
+/// Launching kernels must be done in an `unsafe` block. Calling a kernel is similar to calling a
+/// foreign-language function, as the kernel itself could be written in C or unsafe Rust. The kernel
+/// must accept the same number and type of parameters that are passed to the `launch!` macro. The
+/// kernel must not write invalid data (for example, invalid enums) into areas of memory that can
+/// be copied back to the host. The programmer must ensure that the host does not access device or
+/// unified memory that the kernel could write to until after calling `stream.synchronize()`.
+///
+/// # Examples:
+///
+/// ```
+/// # #[macro_use]
+/// # extern crate rustacuda;
+/// use rustacuda::memory::*;
+/// use rustacuda::module::Module;
+/// use rustacuda::stream::*;
+/// use std::ffi::CString;
+///
+/// # fn main() {
+///
+/// // Set up the context, load the module, and create a stream to run kernels in.
+/// let _ctx = rustacuda::quick_init().unwrap();
+/// let filename = CString::new("./resources/add.ptx").unwrap();
+/// let module = Module::load(&filename).unwrap();
+/// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+///
+/// // Create buffers for data
+/// let mut in_x = DeviceBuffer::from_slice(&[1.0f32; 10]).unwrap();
+/// let mut in_y = DeviceBuffer::from_slice(&[2.0f32; 10]).unwrap();
+/// let mut out_1 = DeviceBuffer::from_slice(&[0.0f32; 10]).unwrap();
+/// let mut out_2 = DeviceBuffer::from_slice(&[0.0f32; 10]).unwrap();
+///
+/// // This kernel adds each element in `in_x` and `in_y` and writes the result into `out`.
+/// unsafe {
+///     // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
+///     let result = launch!(module.sum<<<1, 1, 0, stream>>>(
+///         in_x.as_device_ptr(),
+///         in_y.as_device_ptr(),
+///         out_1.as_device_ptr(),
+///         out_1.len()
+///     ));
+///     result.unwrap();
+///
+///     // Launch the kernel again using the `function` form:
+///     let function_name = CString::new("sum").unwrap();
+///     let sum = module.get_function(&function_name).unwrap();
+///     // Launch with 1x1x1 (1) blocks of 10x1x1 (10) threads, to show that you can use tuples to
+///     // configure grid and block size.
+///     let result = launch!(sum<<<(1, 1, 1), (10, 1, 1), 0, stream>>>(
+///         in_x.as_device_ptr(),
+///         in_y.as_device_ptr(),
+///         out_2.as_device_ptr(),
+///         out_2.len()
+///     ));
+///     result.unwrap();
+/// }
+///
+/// // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
+/// stream.synchronize().unwrap();
+///
+/// // Copy the results back to host memory
+/// let mut out_host = [0.0f32; 20];
+/// out_1.copy_to(&mut out_host[0..10]).unwrap();
+/// out_2.copy_to(&mut out_host[10..20]).unwrap();
+///
+/// for x in out_host.iter() {
+///     assert_eq!(3.0, *x);
+/// }
+///
+/// # }
+/// ```
+///
+#[macro_export]
+macro_rules! launch {
+    ($module:ident . $function:ident <<<$grid:expr, $block:expr, $shared:expr, $stream:ident>>>( $( $arg:expr),* )) => {
+        {
+            let name = std::ffi::CString::new(stringify!($function)).unwrap();
+            let function = $module.get_function(&name);
+            match function {
+                Ok(f) => launch!(f<<<$grid, $block, $shared, $stream>>>( $($arg),* ) ),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($function:ident <<<$grid:expr, $block:expr, $shared:expr, $stream:ident>>>( $( $arg:expr),* )) => {
+        {
+            fn assert_impl_devicecopy<T: $crate::memory::DeviceCopy>(_val: T) {};
+            if false {
+                $(
+                    assert_impl_devicecopy($arg);
+                )*
+            };
+
+            $stream.launch(&$function, $grid, $block, $shared,
+                &[
+                    $(
+                        &mut $arg as *mut _ as *mut ::std::ffi::c_void,
+                    )*
+                ]
+            )
+        }
+    };
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use memory::CopyDestination;
+    use memory::DeviceBuffer;
+    use quick_init;
+    use std::ffi::CString;
+    use stream::{Stream, StreamFlags};
+
+    #[test]
+    fn test_launch() {
+        let _context = quick_init();
+        let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
+        let module = Module::load_data(&ptx_text).unwrap();
+
+        unsafe {
+            let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128]).unwrap();
+            let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128]).unwrap();
+            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128).unwrap();
+
+            let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len())).unwrap();
+            stream.synchronize().unwrap();
+
+            let mut out_host = [0f32; 128];
+            out.copy_to(&mut out_host[..]).unwrap();
+            for x in out_host.iter() {
+                assert_eq!(3, *x as u32);
+            }
+        }
+    }
+}

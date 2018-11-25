@@ -13,7 +13,7 @@
 use cuda_sys::cuda::{self, CUstream};
 use error::{CudaResult, ToResult};
 use function::Function;
-use std::any::Any;
+use std::ffi::c_void;
 use std::mem;
 use std::ptr;
 
@@ -239,7 +239,7 @@ impl Stream {
         grid_size: G,
         block_size: B,
         shared_mem_bytes: u32,
-        args: &[&Any],
+        args: &[*mut c_void],
     ) -> CudaResult<()>
     where
         G: Into<GridSize>,

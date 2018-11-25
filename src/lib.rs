@@ -21,6 +21,8 @@ pub mod memory;
 pub mod module;
 pub(crate) mod private;
 pub mod stream;
+
+#[macro_export]
 pub mod function;
 
 mod derive_compile_fail;
@@ -32,18 +34,6 @@ use error::{CudaResult, ToResult};
 
 /*
 TODO before announcement:
-- Implement basic function launching and device synchronization
-
-Example launch macro invocations:
-launch!(module.function<<<grid, block, 0, stream>>>(arg1, arg2, arg3)); // Looks up the function first
-launch!(function<<<grid, block, 0, stream>>>(arg1, arg2, arg3)); // Uses the function directly
-
-// If possible, use Into to allow users to pass numbers/tuples rather than just grid/blockdims.
-launch!(function<<<1024, 256, 0, stream>>>(arg1, arg2, arg3));
-launch!(function<<<(16, 16), (8, 8), 0, stream>>>(arg1, arg2, arg3));
-
-Launches must be unsafe, since it's effectively an FFI call.
-
 - Figure out an error-handling story
 - Document this module. Just do a pass or two over the documentation and examples in general.
 - Write the user guide
