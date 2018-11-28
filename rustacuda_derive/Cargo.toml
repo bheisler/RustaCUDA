@@ -5,7 +5,8 @@ authors = ["Brook Heisler <brookheisler@gmail.com>"]
 
 description = "Custom Derive Macro for Rustacuda"
 repository = "https://github.com/bheisler/rustacuda"
-license = "Apache-2.0/MIT"
+readme = "README.md"
+license = "Apache-2.0 OR MIT"
 
 [lib]
 proc-macro = true
