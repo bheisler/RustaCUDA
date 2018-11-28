@@ -1,6 +1,6 @@
 <h1 align="center">RustaCUDA</h1>
 
-<div align="center">High-level Interface to <a href="https://developer.nvidia.com/cuda-zone">NVIDIA® CUDA™</a> in Rust</div>
+<div align="center">High-level Interface to <a href="https://developer.nvidia.com/cuda-zone">NVIDIA® CUDA™ Driver API</a> in Rust</div>
 
 <div align="center">
     <a href="https://bheisler.github.io/RustaCUDA/rustacuda/index.html">API Documentation (master branch)</a>
@@ -12,9 +12,9 @@
     </a>
 </div>
 
-RustaCUDA helps you bring GPU-acceleration to your projects by providing a high-level, easy-to-use
-interface to the CUDA GPU computing toolkit. Bring the power and safety of Rust to a whole new
-level of performance!
+RustaCUDA helps you bring GPU-acceleration to your projects by providing a flexible, easy-to-use
+interface to the CUDA GPU computing toolkit. RustaCUDA makes it easy to manage GPU memory,
+transfer data to and from the GPU, and load and launch compute kernels written in any language.
 
 ## Table of Contents
 - [Table of Contents](#table-of-contents)
@@ -37,43 +37,134 @@ level of performance!
  - __Fast__: RustaCUDA should aim to be as fast as possible, where it doesn't conflict with the other goals.
 
 RustaCUDA is intended to provide a programmer-friendly library for working with the host-side CUDA
-API. It is not intended to assist in compiling Rust code to CUDA kernels (though see
+Driver API. It is not intended to assist in compiling Rust code to CUDA kernels (though see
 [rust-ptx-builder](https://github.com/denzp/rust-ptx-builder) for that) or to provide device-side
-utilities to be used within the kernels themselves (though I plan to build a device-side helper
-library later, if nobody else gets there first).
+utilities to be used within the kernels themselves.
 
 RustaCUDA is deliberately agnostic about how the kernels work or how they were compiled. This makes
 it possible to (for example) use C kernels compiled with `nvcc`.
 
 ### Roadmap
 
-RustaCUDA is still in early development. The plan is to build wrappers for a minimum viable subset
-of the CUDA API (essentially, the minimum necessary to manage memory and launch basic kernels).
-This does not include:
+RustaCUDA currently supports a minimum viable subset of the CUDA API (essentially, the minimum
+necessary to manage memory and launch basic kernels). This does not include:
 
-- Streams, or any asynchronous operation aside from kernel launches
+- Any asynchronous operation aside from kernel launches
 - Events
 - Access to CUDA 1/2/3D arrays and texture memory
 - Multi-GPU support
-- Any but the most basic module and context management
+- Runtime linking
 - CUDA Graphs
 - And more!
 
-These additional features will be developed later, as time permits and as necessary.
+These additional features will be developed later, as time permits and as necessary. If you need a
+feature that is not yet supported, consider submitting a pull request!
 
 ### Quickstart
 
-TODO: Write this when I have something working
+Before using RustaCUDA, you must install the CUDA development libraries for your system. Version
+8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
+drivers.
+
+Add the following to your `Cargo.toml`:
+
+```yaml
+[dependencies]
+rustacuda = "0.1"
+rustacuda_macros = "0.1"
+```
+
+And this to your crate root:
+
+```rust
+#[macro_use]
+extern crate rustacuda;
+#[macro_use]
+extern crate rustacuda_macros;
+```
+
+Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
+
+```text
+export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
+```
+
+First, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
+the resources directory for your application. Then add this code to your `main.rs` file:
+
+```rust
+#[macro_use]
+extern crate rustacuda;
+
+use rustacuda::prelude::*;
+use rustacuda::memory::DeviceBox;
+use std::error::Error;
+use std::ffi::CString;
+
+fn main() -> Result<(), Box<Error>> {
+    // Initialize the CUDA API
+    rustacuda::init(CudaFlags::empty())?;
+    
+    // Get the first device
+    let device = Device::get_device(0)?;
+
+    // Create a context associated to this device
+    let context = Context::create_and_push(
+        ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+
+    // Load the module containing the function we want to call
+    let module_data = CString::new(include_str!("../resources/add.ptx"))?;
+    let module = Module::load_data(&module_data)?;
+
+    // Create a stream to submit work to
+    let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+
+    // Allocate space on the device and copy numbers to it.
+    let mut x = DeviceBox::new(&10.0f32)?;
+    let mut y = DeviceBox::new(&20.0f32)?;
+    let mut result = DeviceBox::new(&0.0f32)?;
+
+    // Launching kernels is unsafe since Rust can't enforce safety - think of kernel launches
+    // as a foreign-function call. In this case, it is - this kernel is written in CUDA C.
+    unsafe {
+        // Launch the `sum` function with one block containing one thread on the given stream.
+        launch!(module.sum<<<1, 1, 0, stream>>>(
+            x.as_device_ptr(),
+            y.as_device_ptr(),
+            result.as_device_ptr(),
+            1 // Length
+        ))?;
+    }
+
+    // The kernel launch is asynchronous, so we wait for the kernel to finish executing
+    stream.synchronize()?;
+
+    // Copy the result back to the host
+    let mut result_host = 0.0f32;
+    result.copy_to(&mut result_host)?;
+    
+    println!("Sum is {}", result_host);
+
+    Ok(())
+}
+```
 
 ### Contributing
 
-Thanks for your interest! Right now RustaCUDA is still under initial development, and is not
-accepting contributions at this time. Rest assured that contributions will be welcome once there
-is something more substantial to contribute to.
+Thanks for your interest! Contributions are welcome.
+
+Issues, feature requests, questions and bug reports should be reported via the issue tracker above.
+In particular, becuase RustaCUDA aims to be well-documented, please report anything you find
+confusing or incorrect in the documentation.
+
+Code or documentation improvements in the form of pull requests are also welcome. Please file or
+comment on an issue to allow for discussion before doing a lot of work, though.
+
+For more details, see the [CONTRIBUTING.md file](https://github.com/bheisler/rustaCUDA/blob/master/CONTRIBUTING.md).
 
 ### Maintenance
 
-RustaCUDA is currently under initial development by Brook Heisler (@bheisler).
+RustaCUDA is currently maintained by Brook Heisler (@bheisler).
 
 ### License
 

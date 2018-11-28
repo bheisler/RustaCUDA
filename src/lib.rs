@@ -40,7 +40,7 @@
 //!
 //! # Usage:
 //!
-//! Before using RustaCUDA, you must install the CUDA development headers for your system. Version
+//! Before using RustaCUDA, you must install the CUDA development libraries for your system. Version
 //! 8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
 //! drivers.
 //!
@@ -61,7 +61,8 @@
 //! extern crate rustacuda_macros;
 //! ```
 //!
-//! Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
+//! Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA libraries.
+//! For example, on Windows (MINGW):
 //!
 //! ```text
 //! export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
@@ -163,18 +164,6 @@ use context::{Context, ContextFlags};
 use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
 use device::Device;
 use error::{CudaResult, ToResult};
-
-/*
-TODO before announcement:
-- Write the user guide
-    - Basic example
-    - Using nvcc to compile kernels
-    - Using ptx-builder to compile kernels
-- Set up CI to generate docs and (if possible) compile (but not test)
-- Rework path tracer to use RustaCUDA
-- Write up the announcement post
-- Write contributor docs and such
-*/
 
 bitflags! {
     /// Bit flags for initializing the CUDA driver. Currently, no flags are defined,
