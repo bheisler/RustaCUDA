@@ -57,7 +57,7 @@ files which are re-exported as a single module, while especially simple modules 
 and version management are combined into the crate root. If you're implementing a new module,
 use your judgement as to where it belongs.
 
-The custom-derive macro for `DeviceCopy` is defined in `rustacuda-macros`.
+The custom-derive macro for `DeviceCopy` is defined in `rustacuda_derive`.
 
 ## Github Labels
 

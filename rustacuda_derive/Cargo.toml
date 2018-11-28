@@ -1,5 +1,5 @@
 [package]
-name = "rustacuda_macros"
+name = "rustacuda_derive"
 version = "0.1.0"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
 
