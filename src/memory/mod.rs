@@ -92,7 +92,6 @@ use std::num::*;
 ///
 /// ```
 /// #[macro_use]
-/// extern crate rustacuda_derive;
 /// extern crate rustacuda;
 ///
 /// #[derive(Clone, DeviceCopy)]
@@ -107,7 +106,6 @@ use std::num::*;
 ///
 /// ```compile_fail
 /// # #[macro_use]
-/// # extern crate rustacuda_derive;
 /// # extern crate rustacuda;
 /// #[derive(Clone, DeviceCopy)]
 /// struct MyStruct(Vec<u64>);

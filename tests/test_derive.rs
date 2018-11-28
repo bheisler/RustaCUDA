@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 #[macro_use]
-extern crate rustacuda_derive;
 extern crate rustacuda;
 
 #[derive(Clone, DeviceCopy)]

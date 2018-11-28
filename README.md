@@ -71,7 +71,6 @@ Add the following to your `Cargo.toml`:
 ```yaml
 [dependencies]
 rustacuda = "0.1"
-rustacuda_derive = "0.1"
 ```
 
 And this to your crate root:
@@ -79,8 +78,6 @@ And this to your crate root:
 ```rust
 #[macro_use]
 extern crate rustacuda;
-#[macro_use]
-extern crate rustacuda_derive;
 ```
 
 Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
