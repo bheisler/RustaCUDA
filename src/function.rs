@@ -150,8 +150,8 @@ impl<'a> Function<'a> {
     /// # let _ctx = quick_init().unwrap();
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let filename = CString::new("./resources/add.ptx").unwrap();
-    /// # let module = Module::load(&filename).unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// # let module = Module::load_from_string(&ptx).unwrap();
     /// # let name = CString::new("sum").unwrap();
     /// use rustacuda::function::FunctionAttribute;
     /// let function = module.get_function(&name).unwrap();
@@ -189,8 +189,8 @@ impl<'a> Function<'a> {
     /// # let _ctx = quick_init().unwrap();
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let filename = CString::new("./resources/add.ptx").unwrap();
-    /// # let module = Module::load(&filename).unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// # let module = Module::load_from_string(&ptx).unwrap();
     /// # let name = CString::new("sum").unwrap();
     /// use rustacuda::context::CacheConfig;
     /// let mut function = module.get_function(&name).unwrap();
@@ -213,8 +213,8 @@ impl<'a> Function<'a> {
     /// # let _ctx = quick_init().unwrap();
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let filename = CString::new("./resources/add.ptx").unwrap();
-    /// # let module = Module::load(&filename).unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// # let module = Module::load_from_string(&ptx).unwrap();
     /// # let name = CString::new("sum").unwrap();
     /// use rustacuda::context::SharedMemoryConfig;
     /// let mut function = module.get_function(&name).unwrap();
@@ -285,8 +285,8 @@ impl<'a> Function<'a> {
 ///
 /// // Set up the context, load the module, and create a stream to run kernels in.
 /// let _ctx = rustacuda::quick_init().unwrap();
-/// let filename = CString::new("./resources/add.ptx").unwrap();
-/// let module = Module::load(&filename).unwrap();
+/// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+/// let module = Module::load_from_string(&ptx).unwrap();
 /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
 ///
 /// // Create buffers for data
@@ -384,7 +384,7 @@ mod test {
     fn test_launch() {
         let _context = quick_init();
         let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_data(&ptx_text).unwrap();
+        let module = Module::load_from_string(&ptx_text).unwrap();
 
         unsafe {
             let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128]).unwrap();

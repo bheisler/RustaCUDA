@@ -1,6 +1,4 @@
 //! Functions and types for working with CUDA modules.
-//!
-//!
 
 use cuda_sys::cuda;
 use error::{CudaResult, DropResult, ToResult};
@@ -32,9 +30,9 @@ impl Module {
     /// use std::ffi::CString;
     ///
     /// let filename = CString::new("./resources/add.ptx").unwrap();
-    /// let module = Module::load(&filename).unwrap();
+    /// let module = Module::load_from_file(&filename).unwrap();
     /// ```
-    pub fn load(filename: &CStr) -> CudaResult<Module> {
+    pub fn load_from_file(filename: &CStr) -> CudaResult<Module> {
         unsafe {
             let mut module = Module {
                 inner: ptr::null_mut(),
@@ -62,9 +60,9 @@ impl Module {
     /// use std::ffi::CString;
     ///
     /// let image = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// let module = Module::load_data(&image).unwrap();
+    /// let module = Module::load_from_string(&image).unwrap();
     /// ```
-    pub fn load_data(image: &CStr) -> CudaResult<Module> {
+    pub fn load_from_string(image: &CStr) -> CudaResult<Module> {
         unsafe {
             let mut module = Module {
                 inner: ptr::null_mut(),
@@ -92,8 +90,8 @@ impl Module {
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let filename = CString::new("./resources/add.ptx").unwrap();
-    /// let module = Module::load(&filename).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// let module = Module::load_from_string(&ptx).unwrap();
     /// let name = CString::new("my_constant").unwrap();
     /// let symbol = module.get_global::<u32>(&name).unwrap();
     /// let mut host_const = 0;
@@ -129,8 +127,8 @@ impl Module {
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let filename = CString::new("./resources/add.ptx").unwrap();
-    /// let module = Module::load(&filename).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// let module = Module::load_from_string(&ptx).unwrap();
     /// let name = CString::new("sum").unwrap();
     /// let function = module.get_function(&name).unwrap();
     /// ```
@@ -160,8 +158,8 @@ impl Module {
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let filename = CString::new("./resources/add.ptx").unwrap();
-    /// let module = Module::load(&filename).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+    /// let module = Module::load_from_string(&ptx).unwrap();
     /// match Module::drop(module) {
     ///     Ok(()) => println!("Successfully destroyed"),
     ///     Err((e, module)) => {
@@ -255,7 +253,7 @@ mod test {
         let _context = quick_init();
 
         let filename = CString::new("./resources/add.ptx").unwrap();
-        let module = Module::load(&filename).unwrap();
+        let module = Module::load_from_file(&filename).unwrap();
         drop(module)
     }
 
@@ -263,7 +261,7 @@ mod test {
     fn test_load_from_memory() {
         let _context = quick_init();
         let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_data(&ptx_text).unwrap();
+        let module = Module::load_from_string(&ptx_text).unwrap();
         drop(module)
     }
 
@@ -271,8 +269,8 @@ mod test {
     fn test_copy_from_module() {
         let _context = quick_init();
 
-        let filename = CString::new("./resources/add.ptx").unwrap();
-        let module = Module::load(&filename).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+        let module = Module::load_from_string(&ptx).unwrap();
 
         let constant_name = CString::new("my_constant").unwrap();
         let symbol = module.get_global::<u32>(&constant_name).unwrap();
@@ -286,8 +284,8 @@ mod test {
     fn test_copy_to_module() {
         let _context = quick_init();
 
-        let filename = CString::new("./resources/add.ptx").unwrap();
-        let module = Module::load(&filename).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
+        let module = Module::load_from_string(&ptx).unwrap();
 
         let constant_name = CString::new("my_constant").unwrap();
         let mut symbol = module.get_global::<u32>(&constant_name).unwrap();

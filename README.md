@@ -98,7 +98,7 @@ use rustacuda::memory::DeviceBox;
 use std::error::Error;
 use std::ffi::CString;
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     // Initialize the CUDA API
     rustacuda::init(CudaFlags::empty())?;
     
@@ -111,7 +111,7 @@ fn main() -> Result<(), Box<Error>> {
 
     // Load the module containing the function we want to call
     let module_data = CString::new(include_str!("../resources/add.ptx"))?;
-    let module = Module::load_data(&module_data)?;
+    let module = Module::load_from_string(&module_data)?;
 
     // Create a stream to submit work to
     let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
