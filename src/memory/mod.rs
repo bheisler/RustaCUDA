@@ -74,4 +74,4 @@ pub use self::device::*;
 pub use self::locked::*;
 pub use self::malloc::*;
 pub use self::unified::*;
-pub use rustacuda_core::memory::*;
+pub use rustacuda_core::{DeviceCopy, DevicePointer, UnifiedPointer};
