@@ -124,6 +124,5 @@ fn check_fields(fields: &Vec<&Field>) -> Vec<TokenStream> {
         .map(|field| {
             let field_type = &field.ty;
             quote!{assert_impl::<#field_type>();}
-        })
-        .collect()
+        }).collect()
 }

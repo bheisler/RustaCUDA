@@ -1,6 +1,6 @@
-use memory::DeviceCopy;
-use core::ptr;
 use core::fmt;
+use core::ptr;
+use memory::DeviceCopy;
 
 /// A pointer to device memory.
 ///

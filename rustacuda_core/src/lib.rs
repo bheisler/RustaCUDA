@@ -6,7 +6,10 @@
 
 #![no_std]
 #![warn(
-    missing_docs, missing_debug_implementations, unused_import_braces, unused_results,
+    missing_docs,
+    missing_debug_implementations,
+    unused_import_braces,
+    unused_results,
     unused_qualifications
 )]
 #![allow(unknown_lints)]
