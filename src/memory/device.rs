@@ -91,6 +91,38 @@ impl<T> DeviceBox<T> {
         }
     }
 
+    /// Allocate device memory and fill it with zeroes (`0u8`).
+    ///
+    /// This doesn't actually allocate if `T` is zero-sized.
+    ///
+    /// # Safety:
+    ///
+    /// The backing memory is zeroed, which may not be a valid bit-pattern for type `T`. The caller
+    /// must ensure either that all-zeroes is a valid bit-pattern for type `T` or that the backing
+    /// memory is set to a valid value before it is read.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let mut zero = unsafe { DeviceBox::zeroed().unwrap() };
+    /// let mut value = 5u64;
+    /// zero.copy_to(&mut value).unwrap();
+    /// assert_eq!(0, value);
+    /// ```
+    pub unsafe fn zeroed() -> CudaResult<Self> {
+        let mut new_box = DeviceBox::uninitialized()?;
+        if mem::size_of::<T>() != 0 {
+            cuda::cuMemsetD8_v2(
+                new_box.as_device_ptr().as_raw_mut() as u64,
+                0,
+                mem::size_of::<T>(),
+            ).to_result()?;
+        }
+        Ok(new_box)
+    }
+
     /// Constructs a DeviceBox from a raw pointer.
     ///
     /// After calling this function, the raw pointer and the memory it points to is owned by the
@@ -900,6 +932,49 @@ impl<T> DeviceBuffer<T> {
 
         let ptr = if bytes > 0 {
             cuda_malloc(bytes)?
+        } else {
+            DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
+        };
+        Ok(DeviceBuffer {
+            buf: ptr,
+            capacity: size,
+        })
+    }
+
+    /// Allocate a new device buffer large enough to hold `size` `T`'s and fill the contents with
+    /// zeroes (`0u8`).
+    ///
+    /// # Errors:
+    ///
+    /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
+    /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
+    ///
+    /// # Safety:
+    ///
+    /// The backing memory is zeroed, which may not be a valid bit-pattern for type `T`. The caller
+    /// must ensure either that all-zeroes is a valid bit-pattern for type `T` or that the backing
+    /// memory is set to a valid value before it is read.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let buffer = unsafe { DeviceBuffer::zeroed(5).unwrap() };
+    /// let mut host_values = [1u64, 2, 3, 4, 5];
+    /// buffer.copy_to(&mut host_values).unwrap();
+    /// assert_eq!([0u64, 0, 0, 0, 0], host_values);
+    /// ```
+    pub unsafe fn zeroed(size: usize) -> CudaResult<Self> {
+        let bytes = size
+            .checked_mul(mem::size_of::<T>())
+            .ok_or(CudaError::InvalidMemoryAllocation)?;
+
+        let ptr = if bytes > 0 {
+            let mut ptr = cuda_malloc(bytes)?;
+            cuda::cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
+                .to_result()?;
+            ptr
         } else {
             DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
         };

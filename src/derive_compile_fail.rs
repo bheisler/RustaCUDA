@@ -4,6 +4,7 @@
 //! ```compile_fail
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! struct ShouldFailTuple(Vec<u64>);
@@ -14,6 +15,7 @@
 //! ```compile_fail
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! struct ShouldFailStruct{v: Vec<u64>}
@@ -24,6 +26,7 @@
 //! ```compile_fail
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! enum ShouldFailTupleEnum {
@@ -37,6 +40,7 @@
 //! ```compile_fail
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! enum ShouldFailStructEnum {
@@ -50,6 +54,7 @@
 //! ```compile_fail
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! #[derive(Copy, Clone, DeviceCopy)]
 //! union ShouldFailUnion {

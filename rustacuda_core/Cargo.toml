@@ -1,17 +1,11 @@
 [package]
-name = "rustacuda_derive"
+name = "rustacuda_core"
 version = "0.1.0"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
 
-description = "Custom Derive Macro for RustaCUDA"
+description = "Minimal kernel-support crate for Rustacuda"
 repository = "https://github.com/bheisler/RustaCUDA"
 readme = "README.md"
 license = "Apache-2.0 OR MIT"
 
-[lib]
-proc-macro = true
-
 [dependencies]
-syn = "0.15"
-quote = "0.6"
-proc-macro2 = "0.4"

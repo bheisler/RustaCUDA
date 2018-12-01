@@ -8,6 +8,10 @@ use std::marker::PhantomData;
 use std::mem::transmute;
 
 /// Dimensions of a grid, or the number of thread blocks in a kernel launch.
+///
+/// Each component of a `GridSize` must be at least 1. The maximum size depends on your device's
+/// compute capability, but maximums of `x = (2^31)-1, y = 65535, z = 65535` are common. Launching
+/// a kernel with a grid size greater than these limits will cause an error.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GridSize {
     /// Width of grid in blocks
@@ -19,16 +23,19 @@ pub struct GridSize {
 }
 impl GridSize {
     /// Create a one-dimensional grid of `x` blocks
+    #[inline]
     pub fn x(x: u32) -> GridSize {
         GridSize { x, y: 1, z: 1 }
     }
 
     /// Create a two-dimensional grid of `x * y` blocks
+    #[inline]
     pub fn xy(x: u32, y: u32) -> GridSize {
         GridSize { x, y, z: 1 }
     }
 
     /// Create a three-dimensional grid of `x * y * z` blocks
+    #[inline]
     pub fn xyz(x: u32, y: u32, z: u32) -> GridSize {
         GridSize { x, y, z }
     }
@@ -48,8 +55,19 @@ impl From<(u32, u32, u32)> for GridSize {
         GridSize::xyz(x, y, z)
     }
 }
+impl<'a> From<&'a GridSize> for GridSize {
+    fn from(other: &GridSize) -> GridSize {
+        other.clone()
+    }
+}
 
 /// Dimensions of a thread block, or the number of threads in a block.
+///
+/// Each component of a `BlockSize` must be at least 1. The maximum size depends on your device's
+/// compute capability, but maximums of `x = 1024, y = 1024, z = 64` are common. In addition, the
+/// limit on total number of threads in a block (`x * y * z`) is also defined by the compute
+/// capability, typically 1024. Launching a kernel with a block size greater than these limits will
+/// cause an error.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlockSize {
     /// X dimension of each thread block
@@ -61,16 +79,19 @@ pub struct BlockSize {
 }
 impl BlockSize {
     /// Create a one-dimensional block of `x` threads
+    #[inline]
     pub fn x(x: u32) -> BlockSize {
         BlockSize { x, y: 1, z: 1 }
     }
 
     /// Create a two-dimensional block of `x * y` threads
+    #[inline]
     pub fn xy(x: u32, y: u32) -> BlockSize {
         BlockSize { x, y, z: 1 }
     }
 
     /// Create a three-dimensional block of `x * y * z` threads
+    #[inline]
     pub fn xyz(x: u32, y: u32, z: u32) -> BlockSize {
         BlockSize { x, y, z }
     }
@@ -88,6 +109,11 @@ impl From<(u32, u32)> for BlockSize {
 impl From<(u32, u32, u32)> for BlockSize {
     fn from((x, y, z): (u32, u32, u32)) -> BlockSize {
         BlockSize::xyz(x, y, z)
+    }
+}
+impl<'a> From<&'a BlockSize> for BlockSize {
+    fn from(other: &BlockSize) -> BlockSize {
+        other.clone()
     }
 }
 
@@ -363,7 +389,7 @@ macro_rules! launch {
             $stream.launch(&$function, $grid, $block, $shared,
                 &[
                     $(
-                        &mut $arg as *mut _ as *mut ::std::ffi::c_void,
+                        &$arg as *const _ as *mut ::std::ffi::c_void,
                     )*
                 ]
             )

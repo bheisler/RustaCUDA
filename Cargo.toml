@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
 
 description = "CUDA Driver API Wrapper"
-repository = "https://github.com/bheisler/rustacuda"
+repository = "https://github.com/bheisler/RustaCUDA"
 readme = "README.md"
 license = "Apache-2.0 OR MIT"
 keywords = ["bindings", "cuda", "gpgpu"]
@@ -18,3 +18,4 @@ maintenance = { status = "actively-developed" }
 cuda-sys = "0.2"
 bitflags = "1.0"
 rustacuda_derive = { version = "0.1.0", path = "rustacuda_derive" }
+rustacuda_core = { version = "0.1.0", path = "rustacuda_core" }

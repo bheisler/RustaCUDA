@@ -49,6 +49,8 @@
 //! ```text
 //! [dependencies]
 //! rustacuda = "0.1"
+//! rustacuda_derive = "0.1"
+//! rustacuda_core = "0.1"
 //! ```
 //!
 //! And this to your crate root:
@@ -56,6 +58,11 @@
 //! ```text
 //! #[macro_use]
 //! extern crate rustacuda;
+//!
+//! #[macro_use]
+//! extern crate rustacuda_derive;
+//!
+//! extern crate rustacuda_core;
 //! ```
 //!
 //! Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA libraries.
@@ -75,6 +82,7 @@
 //! ```
 //! #[macro_use]
 //! extern crate rustacuda;
+//! extern crate rustacuda_core;
 //!
 //! use rustacuda::prelude::*;
 //! use rustacuda::memory::DeviceBox;
@@ -145,6 +153,7 @@
 #[macro_use]
 extern crate bitflags;
 extern crate cuda_sys;
+extern crate rustacuda_core;
 
 #[allow(unused_imports, useless_attribute)]
 #[macro_use]

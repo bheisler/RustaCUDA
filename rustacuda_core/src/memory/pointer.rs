@@ -1,5 +1,6 @@
 use memory::DeviceCopy;
-use std::ptr;
+use core::ptr;
+use core::fmt;
 
 /// A pointer to device memory.
 ///
@@ -323,9 +324,9 @@ impl<T> DevicePointer<T> {
         self.wrapping_offset((count as isize).wrapping_neg())
     }
 }
-impl<T> ::std::fmt::Pointer for DevicePointer<T> {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        ::std::fmt::Pointer::fmt(&self.0, f)
+impl<T> fmt::Pointer for DevicePointer<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Pointer::fmt(&self.0, f)
     }
 }
 impl<T> Clone for DevicePointer<T> {
@@ -656,9 +657,9 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
         self.wrapping_offset((count as isize).wrapping_neg())
     }
 }
-impl<T: DeviceCopy> ::std::fmt::Pointer for UnifiedPointer<T> {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        ::std::fmt::Pointer::fmt(&self.0, f)
+impl<T: DeviceCopy> fmt::Pointer for UnifiedPointer<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Pointer::fmt(&self.0, f)
     }
 }
 impl<T: DeviceCopy> Clone for UnifiedPointer<T> {

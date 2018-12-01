@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate rustacuda;
+extern crate rustacuda_core;
 
 #[derive(Clone, DeviceCopy)]
 struct ZeroSizedStruct;
