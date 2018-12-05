@@ -28,7 +28,7 @@ fn test_stream_callbacks_execution_order() {
 }
 
 #[test]
-fn test_stream_callbacks_enviroment_capture() {
+fn test_stream_callbacks_environment_capture() {
     let _ctx = quick_init();
     let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
 
@@ -44,7 +44,7 @@ fn test_stream_callbacks_enviroment_capture() {
 }
 
 #[test]
-fn test_stream_callbacks_status_propogation() {
+fn test_stream_callbacks_status_propagation() {
     let _ctx = quick_init();
     let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
 
