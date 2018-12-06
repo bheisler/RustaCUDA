@@ -148,14 +148,14 @@
 // TODO: Add the missing_doc_code_examples warning, switch these to Deny later.
 
 // Allow clippy lints
-#![allow(unknown_lints)]
+#![allow(unknown_lints, clippy::new_ret_no_self)]
 
 #[macro_use]
 extern crate bitflags;
 extern crate cuda_sys;
 extern crate rustacuda_core;
 
-#[allow(unused_imports, useless_attribute)]
+#[allow(unused_imports, clippy::useless_attribute)]
 #[macro_use]
 extern crate rustacuda_derive;
 #[doc(hidden)]
@@ -172,10 +172,10 @@ pub mod stream;
 
 mod derive_compile_fail;
 
-use context::{Context, ContextFlags};
+use crate::context::{Context, ContextFlags};
+use crate::device::Device;
+use crate::error::{CudaResult, ToResult};
 use cuda_sys::cuda::{cuDriverGetVersion, cuInit};
-use device::Device;
-use error::{CudaResult, ToResult};
 
 bitflags! {
     /// Bit flags for initializing the CUDA driver. Currently, no flags are defined,

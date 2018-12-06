@@ -15,4 +15,4 @@
 #![allow(unknown_lints)]
 
 mod memory;
-pub use memory::*;
+pub use crate::memory::*;

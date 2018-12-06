@@ -2,6 +2,7 @@
 name = "rustacuda_derive"
 version = "0.1.0"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
+edition = "2018"
 
 description = "Custom Derive Macro for RustaCUDA"
 repository = "https://github.com/bheisler/RustaCUDA"

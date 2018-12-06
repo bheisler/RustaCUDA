@@ -1,9 +1,9 @@
 //! Functions and types for working with CUDA modules.
 
+use crate::error::{CudaResult, DropResult, ToResult};
+use crate::function::Function;
+use crate::memory::{CopyDestination, DeviceCopy, DevicePointer};
 use cuda_sys::cuda;
-use error::{CudaResult, DropResult, ToResult};
-use function::Function;
-use memory::{CopyDestination, DeviceCopy, DevicePointer};
 use std::ffi::{c_void, CStr};
 use std::fmt;
 use std::marker::PhantomData;
@@ -70,7 +70,8 @@ impl Module {
             cuda::cuModuleLoadData(
                 &mut module.inner as *mut cuda::CUmodule,
                 image.as_ptr() as *const c_void,
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(module)
         }
     }
@@ -108,7 +109,8 @@ impl Module {
                 &mut size as *mut usize,
                 self.inner,
                 name.as_ptr(),
-            ).to_result()?;
+            )
+            .to_result()?;
             assert_eq!(size, mem::size_of::<T>());
             Ok(Symbol {
                 ptr,
@@ -140,7 +142,8 @@ impl Module {
                 &mut func as *mut cuda::CUfunction,
                 self.inner,
                 name.as_ptr(),
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(Function::new(func, self))
         }
     }
@@ -206,7 +209,7 @@ pub struct Symbol<'a, T: DeviceCopy> {
     ptr: DevicePointer<T>,
     module: PhantomData<&'a Module>,
 }
-impl<'a, T: DeviceCopy> ::private::Sealed for Symbol<'a, T> {}
+impl<'a, T: DeviceCopy> crate::private::Sealed for Symbol<'a, T> {}
 impl<'a, T: DeviceCopy> fmt::Pointer for Symbol<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Pointer::fmt(&self.ptr, f)
@@ -221,7 +224,8 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
-                ).to_result()?
+                )
+                .to_result()?
             }
         }
         Ok(())
@@ -235,7 +239,8 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,
-                ).to_result()?
+                )
+                .to_result()?
             }
         }
         Ok(())
@@ -245,7 +250,7 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use quick_init;
+    use crate::quick_init;
     use std::ffi::CString;
 
     #[test]

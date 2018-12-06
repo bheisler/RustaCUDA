@@ -103,14 +103,14 @@
 //! // Call RustaCUDA functions which use the context
 //! ```
 
+use crate::device::Device;
+use crate::error::{CudaResult, DropResult, ToResult};
+use crate::private::Sealed;
+use crate::CudaApiVersion;
 use cuda_sys::cuda::{self, CUcontext};
-use device::Device;
-use error::{CudaResult, DropResult, ToResult};
-use private::Sealed;
 use std::mem;
 use std::mem::transmute;
 use std::ptr;
-use CudaApiVersion;
 
 /// This enumeration represents configuration settings for devices which share hardware resources
 /// between L1 cache and shared memory.
@@ -254,7 +254,8 @@ impl Context {
                 &mut ctx as *mut CUcontext,
                 flags.bits(),
                 device.into_inner(),
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(Context { inner: ctx })
         }
     }
@@ -595,7 +596,8 @@ impl CurrentContext {
             let mut cfg = SharedMemoryConfig::DefaultBankSize;
             cuda::cuCtxGetSharedMemConfig(
                 &mut cfg as *mut SharedMemoryConfig as *mut cuda::CUsharedconfig,
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(cfg)
         }
     }
@@ -627,7 +629,8 @@ impl CurrentContext {
             cuda::cuCtxGetStreamPriorityRange(
                 &mut range.least as *mut i32,
                 &mut range.greatest as *mut i32,
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(range)
         }
     }

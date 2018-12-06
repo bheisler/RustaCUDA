@@ -1,9 +1,9 @@
 //! Functions and types for working with CUDA kernels.
 
-use context::{CacheConfig, SharedMemoryConfig};
+use crate::context::{CacheConfig, SharedMemoryConfig};
+use crate::error::{CudaResult, ToResult};
+use crate::module::Module;
 use cuda_sys::cuda::{self, CUfunction};
-use error::{CudaResult, ToResult};
-use module::Module;
 use std::marker::PhantomData;
 use std::mem::transmute;
 
@@ -192,7 +192,8 @@ impl<'a> Function<'a> {
                 // This should be safe, as the repr and values of FunctionAttribute should match.
                 ::std::mem::transmute(attr),
                 self.inner,
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(val)
         }
     }
@@ -400,11 +401,11 @@ macro_rules! launch {
 #[cfg(test)]
 mod test {
     use super::*;
-    use memory::CopyDestination;
-    use memory::DeviceBuffer;
-    use quick_init;
+    use crate::memory::CopyDestination;
+    use crate::memory::DeviceBuffer;
+    use crate::quick_init;
+    use crate::stream::{Stream, StreamFlags};
     use std::ffi::CString;
-    use stream::{Stream, StreamFlags};
 
     #[test]
     fn test_launch() {

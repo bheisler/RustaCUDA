@@ -1,6 +1,6 @@
 use super::DeviceCopy;
-use error::*;
-use memory::malloc::{cuda_free_locked, cuda_malloc_locked};
+use crate::error::*;
+use crate::memory::malloc::{cuda_free_locked, cuda_malloc_locked};
 use std::mem;
 use std::ops;
 use std::ptr;
@@ -278,11 +278,11 @@ mod test {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_new() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let val = 0u64;
         let mut buffer = LockedBuffer::new(&val, 5).unwrap();
         buffer[0] = 1;
@@ -290,7 +290,7 @@ mod test {
 
     #[test]
     fn test_from_slice() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let values = [0u64; 10];
         let mut buffer = LockedBuffer::from_slice(&values).unwrap();
         for i in buffer[0..3].iter_mut() {
@@ -300,7 +300,7 @@ mod test {
 
     #[test]
     fn from_raw_parts() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let mut buffer = LockedBuffer::new(&0u64, 5).unwrap();
         buffer[2] = 1;
         let ptr = buffer.as_mut_ptr();
@@ -314,21 +314,21 @@ mod test {
 
     #[test]
     fn zero_length_buffer() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buffer = LockedBuffer::new(&0u64, 0).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn zero_size_type() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buffer = LockedBuffer::new(&ZeroSizedType, 10).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn overflows_usize() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let err = LockedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
     }

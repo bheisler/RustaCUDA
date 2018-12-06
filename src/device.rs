@@ -1,7 +1,7 @@
 //! Functions and types for enumerating CUDA devices and retrieving information about them.
 
+use crate::error::{CudaResult, ToResult};
 use cuda_sys::cuda::*;
-use error::{CudaResult, ToResult};
 use std::ffi::CStr;
 use std::ops::Range;
 
@@ -317,7 +317,8 @@ impl Device {
                 // This should be safe, as the repr and values of DeviceAttribute should match.
                 ::std::mem::transmute(attr),
                 self.device,
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(val)
         }
     }
@@ -346,7 +347,7 @@ mod test {
     use super::*;
 
     fn test_init() {
-        ::init(::CudaFlags::empty()).unwrap();
+        crate::init(crate::CudaFlags::empty()).unwrap();
     }
 
     #[test]

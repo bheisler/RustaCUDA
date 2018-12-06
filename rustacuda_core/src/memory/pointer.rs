@@ -1,6 +1,6 @@
+use crate::memory::DeviceCopy;
 use core::fmt;
 use core::ptr;
-use memory::DeviceCopy;
 
 /// A pointer to device memory.
 ///
@@ -211,7 +211,7 @@ impl<T> DevicePointer<T> {
     ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    #[allow(should_implement_trait)]
+    #[allow(clippy::should_implement_trait)]
     pub unsafe fn add(self, count: usize) -> Self
     where
         T: Sized,
@@ -252,7 +252,7 @@ impl<T> DevicePointer<T> {
     ///     let offset = dev_ptr.add(4).sub(3); // Points to the 2nd u64 in the buffer
     ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
     /// }
-    #[allow(should_implement_trait)]
+    #[allow(clippy::should_implement_trait)]
     pub unsafe fn sub(self, count: usize) -> Self
     where
         T: Sized,
@@ -544,7 +544,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    #[allow(should_implement_trait)]
+    #[allow(clippy::should_implement_trait)]
     pub unsafe fn add(self, count: usize) -> Self
     where
         T: Sized,
@@ -585,7 +585,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     let offset = unified_ptr.add(4).sub(3); // Points to the 2nd u64 in the buffer
     ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
-    #[allow(should_implement_trait)]
+    #[allow(clippy::should_implement_trait)]
     pub unsafe fn sub(self, count: usize) -> Self
     where
         T: Sized,
