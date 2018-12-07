@@ -13,15 +13,18 @@ fn test_stream_callbacks_execution_order() {
     stream
         .add_callback(Box::new(|_| {
             order_sender.send(1).unwrap();
-        })).unwrap();
+        }))
+        .unwrap();
     stream
         .add_callback(Box::new(|_| {
             order_sender.send(2).unwrap();
-        })).unwrap();
+        }))
+        .unwrap();
     stream
         .add_callback(Box::new(|_| {
             order_sender.send(3).unwrap();
-        })).unwrap();
+        }))
+        .unwrap();
     for expected in &[1, 2, 3] {
         assert_eq!(*expected, order_receiver.recv().unwrap());
     }
@@ -37,7 +40,8 @@ fn test_stream_callbacks_environment_capture() {
     stream
         .add_callback(Box::new(|_| {
             capture_sender.send(magic_numbers).unwrap();
-        })).unwrap();
+        }))
+        .unwrap();
     let captured_magic_numbers = capture_receiver.recv().unwrap();
     assert_eq!(42, captured_magic_numbers.0);
     assert_eq!(1337, *captured_magic_numbers.1);
@@ -52,6 +56,7 @@ fn test_stream_callbacks_status_propagation() {
     stream
         .add_callback(Box::new(|status| {
             status_sender.send(status).unwrap();
-        })).unwrap();
+        }))
+        .unwrap();
     assert_eq!(Ok(()), status_receiver.recv().unwrap())
 }

@@ -10,9 +10,9 @@
 //! are not currently supported by RustaCUDA. Finally, the host can wait for all work scheduled in
 //! a stream to be completed.
 
+use crate::error::{CudaResult, DropResult, ToResult};
+use crate::function::{BlockSize, Function, GridSize};
 use cuda_sys::cuda::{self, cudaError_t, CUstream};
-use error::{CudaResult, DropResult, ToResult};
-use function::{BlockSize, Function, GridSize};
 use std::ffi::c_void;
 use std::mem;
 use std::panic;
@@ -68,7 +68,7 @@ impl Stream {
     /// // With specific priority
     /// let priority = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
     /// ```
-    pub fn new(flags: StreamFlags, priority: Option<i32>) -> CudaResult<Stream> {
+    pub fn new(flags: StreamFlags, priority: Option<i32>) -> CudaResult<Self> {
         unsafe {
             let mut stream = Stream {
                 inner: ptr::null_mut(),
@@ -77,7 +77,8 @@ impl Stream {
                 &mut stream.inner as *mut CUstream,
                 flags.bits(),
                 priority.unwrap_or(0),
-            ).to_result()?;
+            )
+            .to_result()?;
             Ok(stream)
         }
     }
@@ -164,7 +165,8 @@ impl Stream {
                 Some(callback_wrapper::<T>),
                 Box::into_raw(callback) as *mut c_void,
                 0,
-            ).to_result()
+            )
+            .to_result()
         }
     }
 
@@ -219,7 +221,8 @@ impl Stream {
             self.inner,
             args.as_ptr() as *mut _,
             ptr::null_mut(),
-        ).to_result()
+        )
+        .to_result()
     }
 
     /// Destroy a `Stream`, returning an error.

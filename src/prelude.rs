@@ -3,9 +3,9 @@
 //! This allows the user to `use rustacuda::prelude::*;` and have the most commonly-used types
 //! available quickly.
 
-pub use context::{Context, ContextFlags};
-pub use device::Device;
-pub use memory::{CopyDestination, DeviceBuffer, UnifiedBuffer};
-pub use module::Module;
-pub use stream::{Stream, StreamFlags};
-pub use CudaFlags;
+pub use crate::context::{Context, ContextFlags};
+pub use crate::device::Device;
+pub use crate::memory::{CopyDestination, DeviceBuffer, UnifiedBuffer};
+pub use crate::module::Module;
+pub use crate::stream::{Stream, StreamFlags};
+pub use crate::CudaFlags;

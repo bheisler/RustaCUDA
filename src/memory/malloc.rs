@@ -1,8 +1,8 @@
 use super::DeviceCopy;
+use crate::error::*;
+use crate::memory::DevicePointer;
+use crate::memory::UnifiedPointer;
 use cuda_sys::cuda;
-use error::*;
-use memory::DevicePointer;
-use memory::UnifiedPointer;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
@@ -94,7 +94,8 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
         &mut ptr as *mut *mut c_void as *mut u64,
         size,
         cuda::CUmemAttach_flags_enum::CU_MEM_ATTACH_GLOBAL as u32,
-    ).to_result()?;
+    )
+    .to_result()?;
     let ptr = ptr as *mut T;
     Ok(UnifiedPointer::wrap(ptr as *mut T))
 }
@@ -246,11 +247,11 @@ mod test {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_cuda_malloc() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             let device_mem = cuda_malloc::<u64>(1).unwrap();
             assert!(!device_mem.is_null());
@@ -260,7 +261,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_zero_bytes() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -271,7 +272,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_zero_sized() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -282,7 +283,7 @@ mod test {
 
     #[test]
     fn test_cuda_alloc_overflow() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -293,7 +294,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             let mut unified = cuda_malloc_unified::<u64>(1).unwrap();
             assert!(!unified.is_null());
@@ -307,7 +308,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_zero_bytes() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -318,7 +319,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_zero_sized() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -329,7 +330,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_unified_overflow() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -340,7 +341,7 @@ mod test {
 
     #[test]
     fn test_cuda_free_null() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let null = ::std::ptr::null_mut::<u64>();
         unsafe {
             assert_eq!(
@@ -352,7 +353,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             let locked = cuda_malloc_locked::<u64>(1).unwrap();
             assert!(!locked.is_null());
@@ -366,7 +367,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_zero_bytes() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -377,7 +378,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_zero_sized() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -388,7 +389,7 @@ mod test {
 
     #[test]
     fn test_cuda_malloc_locked_overflow() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,
@@ -399,7 +400,7 @@ mod test {
 
     #[test]
     fn test_cuda_free_locked_null() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             assert_eq!(
                 CudaError::InvalidMemoryAllocation,

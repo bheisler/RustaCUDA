@@ -1,7 +1,7 @@
 use super::DeviceCopy;
-use error::*;
-use memory::malloc::{cuda_free_unified, cuda_malloc_unified};
-use memory::UnifiedPointer;
+use crate::error::*;
+use crate::memory::malloc::{cuda_free_unified, cuda_malloc_unified};
+use crate::memory::UnifiedPointer;
 use std::borrow::{Borrow, BorrowMut};
 use std::cmp::Ordering;
 use std::convert::{AsMut, AsRef};
@@ -155,7 +155,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// let ptr = UnifiedBox::into_unified(x);
     /// # unsafe { UnifiedBox::from_unified(ptr) };
     /// ```
-    #[allow(wrong_self_convention)]
+    #[allow(clippy::wrong_self_convention)]
     pub fn into_unified(mut b: UnifiedBox<T>) -> UnifiedPointer<T> {
         let ptr = mem::replace(&mut b.ptr, UnifiedPointer::null());
         mem::forget(b);
@@ -602,11 +602,11 @@ mod test_unified_box {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_allocate_and_free() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let mut x = UnifiedBox::new(5u64).unwrap();
         *x = 10;
         assert_eq!(10, *x);
@@ -615,7 +615,7 @@ mod test_unified_box {
 
     #[test]
     fn test_allocates_for_non_zst() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(!ptr.is_null());
@@ -624,7 +624,7 @@ mod test_unified_box {
 
     #[test]
     fn test_doesnt_allocate_for_zero_sized_type() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(ZeroSizedType).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         assert!(ptr.is_null());
@@ -633,7 +633,7 @@ mod test_unified_box {
 
     #[test]
     fn test_into_from_unified() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(5u64).unwrap();
         let ptr = UnifiedBox::into_unified(x);
         let _ = unsafe { UnifiedBox::from_unified(ptr) };
@@ -641,7 +641,7 @@ mod test_unified_box {
 
     #[test]
     fn test_equality() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(5u64).unwrap();
         let y = UnifiedBox::new(5u64).unwrap();
         let z = UnifiedBox::new(0u64).unwrap();
@@ -651,7 +651,7 @@ mod test_unified_box {
 
     #[test]
     fn test_ordering() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = UnifiedBox::new(1u64).unwrap();
         let y = UnifiedBox::new(2u64).unwrap();
 
@@ -665,11 +665,11 @@ mod test_unified_buffer {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_new() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let val = 0u64;
         let mut buffer = UnifiedBuffer::new(&val, 5).unwrap();
         buffer[0] = 1;
@@ -677,7 +677,7 @@ mod test_unified_buffer {
 
     #[test]
     fn test_from_slice() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let values = [0u64; 10];
         let mut buffer = UnifiedBuffer::from_slice(&values).unwrap();
         for i in buffer[0..3].iter_mut() {
@@ -687,7 +687,7 @@ mod test_unified_buffer {
 
     #[test]
     fn from_raw_parts() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let mut buffer = UnifiedBuffer::new(&0u64, 5).unwrap();
         buffer[2] = 1;
         let ptr = buffer.as_unified_ptr();
@@ -701,21 +701,21 @@ mod test_unified_buffer {
 
     #[test]
     fn zero_length_buffer() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buffer = UnifiedBuffer::new(&0u64, 0).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn zero_size_type() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buffer = UnifiedBuffer::new(&ZeroSizedType, 10).unwrap();
         drop(buffer);
     }
 
     #[test]
     fn overflows_usize() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let err = UnifiedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
     }

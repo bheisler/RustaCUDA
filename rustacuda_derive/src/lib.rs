@@ -46,7 +46,7 @@ fn impl_device_copy(input: &DeriveInput) -> TokenStream {
     let (impl_generics, type_generics, where_clause) = generics.split_for_impl();
 
     // Finally, generate the unsafe impl and the type-checking function.
-    let generated_code = quote!{
+    let generated_code = quote! {
         unsafe impl#impl_generics ::rustacuda_core::DeviceCopy for #input_type#type_generics #where_clause {}
 
         #[doc(hidden)]
@@ -63,7 +63,7 @@ fn impl_device_copy(input: &DeriveInput) -> TokenStream {
 fn add_bound_to_generics(generics: &Generics) -> Generics {
     let mut new_generics = generics.clone();
     let bound: TypeParamBound =
-        parse_str(&quote!{::rustacuda_core::DeviceCopy}.to_string()).unwrap();
+        parse_str(&quote! {::rustacuda_core::DeviceCopy}.to_string()).unwrap();
 
     for type_param in &mut new_generics.type_params_mut() {
         type_param.bounds.push(bound.clone())
@@ -123,6 +123,7 @@ fn check_fields(fields: &Vec<&Field>) -> Vec<TokenStream> {
         .iter()
         .map(|field| {
             let field_type = &field.ty;
-            quote!{assert_impl::<#field_type>();}
-        }).collect()
+            quote! {assert_impl::<#field_type>();}
+        })
+        .collect()
 }

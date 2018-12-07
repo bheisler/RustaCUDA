@@ -94,7 +94,7 @@ macro_rules! impl_device_copy_array {
     }
 }
 
-impl_device_copy_array!{
+impl_device_copy_array! {
     1 2 3 4 5 6 7 8 9 10
     11 12 13 14 15 16 17 18 19 20
     21 22 23 24 25 26 27 28 29 30
@@ -105,13 +105,16 @@ unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy> DeviceCopy
     for (A, B, C, D)
-{}
+{
+}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy> DeviceCopy
     for (A, B, C, D, E)
-{}
+{
+}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy, D: DeviceCopy, E: DeviceCopy, F: DeviceCopy>
     DeviceCopy for (A, B, C, D, E, F)
-{}
+{
+}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -121,7 +124,8 @@ unsafe impl<
         F: DeviceCopy,
         G: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G)
-{}
+{
+}
 unsafe impl<
         A: DeviceCopy,
         B: DeviceCopy,
@@ -132,4 +136,5 @@ unsafe impl<
         G: DeviceCopy,
         H: DeviceCopy,
     > DeviceCopy for (A, B, C, D, E, F, G, H)
-{}
+{
+}

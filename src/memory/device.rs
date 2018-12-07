@@ -1,8 +1,8 @@
+use crate::error::{CudaError, CudaResult, DropResult, ToResult};
+use crate::memory::malloc::{cuda_free, cuda_malloc};
+use crate::memory::DeviceCopy;
+use crate::memory::DevicePointer;
 use cuda_sys::cuda;
-use error::{CudaError, CudaResult, DropResult, ToResult};
-use memory::malloc::{cuda_free, cuda_malloc};
-use memory::DeviceCopy;
-use memory::DevicePointer;
 use std::fmt::{self, Pointer};
 use std::iter::{ExactSizeIterator, FusedIterator};
 use std::mem;
@@ -16,7 +16,7 @@ use std::slice::{self, Chunks, ChunksMut};
 
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// to/from the device or from one device allocation to another.
-pub trait CopyDestination<O: ?Sized>: ::private::Sealed {
+pub trait CopyDestination<O: ?Sized>: crate::private::Sealed {
     /// Copy data from `source`. `source` must be the same size as `self`.
     ///
     /// # Errors:
@@ -118,7 +118,8 @@ impl<T> DeviceBox<T> {
                 new_box.as_device_ptr().as_raw_mut() as u64,
                 0,
                 mem::size_of::<T>(),
-            ).to_result()?;
+            )
+            .to_result()?;
         }
         Ok(new_box)
     }
@@ -196,7 +197,7 @@ impl<T> DeviceBox<T> {
     /// let ptr = DeviceBox::into_device(x);
     /// # unsafe { DeviceBox::from_device(ptr) };
     /// ```
-    #[allow(wrong_self_convention)]
+    #[allow(clippy::wrong_self_convention)]
     pub fn into_device(mut b: DeviceBox<T>) -> DevicePointer<T> {
         let ptr = mem::replace(&mut b.ptr, DevicePointer::null());
         mem::forget(b);
@@ -274,7 +275,7 @@ impl<T> Pointer for DeviceBox<T> {
         fmt::Pointer::fmt(&self.ptr, f)
     }
 }
-impl<T> ::private::Sealed for DeviceBox<T> {}
+impl<T> crate::private::Sealed for DeviceBox<T> {}
 impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
     fn copy_from(&mut self, val: &T) -> CudaResult<()> {
         let size = mem::size_of::<T>();
@@ -284,7 +285,8 @@ impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
-                ).to_result()?
+                )
+                .to_result()?
             }
         }
         Ok(())
@@ -298,7 +300,8 @@ impl<T: DeviceCopy> CopyDestination<T> for DeviceBox<T> {
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,
-                ).to_result()?
+                )
+                .to_result()?
             }
         }
         Ok(())
@@ -334,18 +337,18 @@ mod test_device_box {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_allocate_and_free_device_box() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&5u64).unwrap();
         drop(x);
     }
 
     #[test]
     fn test_device_box_allocates_for_non_zst() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&5u64).unwrap();
         let ptr = DeviceBox::into_device(x);
         assert!(!ptr.is_null());
@@ -354,7 +357,7 @@ mod test_device_box {
 
     #[test]
     fn test_device_box_doesnt_allocate_for_zero_sized_type() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&ZeroSizedType).unwrap();
         let ptr = DeviceBox::into_device(x);
         assert!(ptr.is_null());
@@ -363,7 +366,7 @@ mod test_device_box {
 
     #[test]
     fn test_into_from_device() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&5u64).unwrap();
         let ptr = DeviceBox::into_device(x);
         let _ = unsafe { DeviceBox::from_device(ptr) };
@@ -371,7 +374,7 @@ mod test_device_box {
 
     #[test]
     fn test_copy_host_to_device() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let y = 5u64;
         let mut x = DeviceBox::new(&0u64).unwrap();
         x.copy_from(&y).unwrap();
@@ -382,7 +385,7 @@ mod test_device_box {
 
     #[test]
     fn test_copy_device_to_host() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&5u64).unwrap();
         let mut y = 0u64;
         x.copy_to(&mut y).unwrap();
@@ -391,7 +394,7 @@ mod test_device_box {
 
     #[test]
     fn test_copy_device_to_device() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let x = DeviceBox::new(&5u64).unwrap();
         let mut y = DeviceBox::new(&0u64).unwrap();
         let mut z = DeviceBox::new(&0u64).unwrap();
@@ -669,7 +672,7 @@ impl<T> DeviceSlice<T> {
     /// slice.copy_to(&mut host_buf).unwrap();
     /// assert_eq!([1u64, 2], host_buf);
     /// ```
-    #[allow(needless_pass_by_value)]
+    #[allow(clippy::needless_pass_by_value)]
     pub unsafe fn from_raw_parts<'a>(data: DevicePointer<T>, len: usize) -> &'a DeviceSlice<T> {
         DeviceSlice::from_slice(slice::from_raw_parts(data.as_raw(), len))
     }
@@ -811,7 +814,7 @@ macro_rules! impl_index {
         )*
     }
 }
-impl_index!{
+impl_index! {
     Range<usize>
     RangeFull
     RangeFrom<usize>
@@ -819,7 +822,7 @@ impl_index!{
     RangeTo<usize>
     RangeToInclusive<usize>
 }
-impl<T> ::private::Sealed for DeviceSlice<T> {}
+impl<T> crate::private::Sealed for DeviceSlice<T> {}
 impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for DeviceSlice<T> {
     fn copy_from(&mut self, val: &I) -> CudaResult<()> {
         let val = val.as_ref();
@@ -834,7 +837,8 @@ impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> CopyDestination<I> for 
                     self.0.as_mut_ptr() as u64,
                     val.as_ptr() as *const c_void,
                     size,
-                ).to_result()?
+                )
+                .to_result()?
             }
         }
         Ok(())
@@ -1132,18 +1136,18 @@ mod test_device_buffer {
 
     #[derive(Clone, Debug)]
     struct ZeroSizedType;
-    unsafe impl ::memory::DeviceCopy for ZeroSizedType {}
+    unsafe impl DeviceCopy for ZeroSizedType {}
 
     #[test]
     fn test_from_slice_drop() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         drop(buf);
     }
 
     #[test]
     fn test_copy_to_from_device() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let start = [0u64, 1, 2, 3, 4, 5];
         let mut end = [0u64, 0, 0, 0, 0, 0];
         let buf = DeviceBuffer::from_slice(&start).unwrap();
@@ -1153,7 +1157,7 @@ mod test_device_buffer {
 
     #[test]
     fn test_slice() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let start = [0u64, 1, 2, 3, 4, 5];
         let mut end = [0u64, 0];
         let mut buf = DeviceBuffer::from_slice(&[0u64, 0, 0, 0]).unwrap();
@@ -1165,7 +1169,7 @@ mod test_device_buffer {
     #[test]
     #[should_panic]
     fn test_copy_to_d2h_wrong_size() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let mut end = [0u64, 1, 2, 3, 4];
         let _ = buf.copy_to(&mut end);
@@ -1174,7 +1178,7 @@ mod test_device_buffer {
     #[test]
     #[should_panic]
     fn test_copy_from_h2d_wrong_size() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let start = [0u64, 1, 2, 3, 4];
         let mut buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let _ = buf.copy_from(&start);
@@ -1182,7 +1186,7 @@ mod test_device_buffer {
 
     #[test]
     fn test_copy_device_slice_to_device() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let start = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let mut mid = DeviceBuffer::from_slice(&[0u64, 0, 0, 0]).unwrap();
         let mut end = DeviceBuffer::from_slice(&[0u64, 0]).unwrap();
@@ -1196,7 +1200,7 @@ mod test_device_buffer {
     #[test]
     #[should_panic]
     fn test_copy_to_d2d_wrong_size() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let mut end = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4]).unwrap();
         let _ = buf.copy_to(&mut end);
@@ -1205,7 +1209,7 @@ mod test_device_buffer {
     #[test]
     #[should_panic]
     fn test_copy_from_d2d_wrong_size() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         let mut buf = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4, 5]).unwrap();
         let start = DeviceBuffer::from_slice(&[0u64, 1, 2, 3, 4]).unwrap();
         let _ = buf.copy_from(&start);
@@ -1213,7 +1217,7 @@ mod test_device_buffer {
 
     #[test]
     fn test_can_create_uninitialized_non_devicecopy_buffers() {
-        let _context = ::quick_init().unwrap();
+        let _context = crate::quick_init().unwrap();
         unsafe {
             let _box: DeviceBox<Vec<u8>> = DeviceBox::uninitialized().unwrap();
             let buffer: DeviceBuffer<Vec<u8>> = DeviceBuffer::uninitialized(10).unwrap();
