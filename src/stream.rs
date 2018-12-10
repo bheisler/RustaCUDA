@@ -244,6 +244,14 @@ impl Stream {
         .to_result()
     }
 
+    // Get the inner `CUstream` from the `Stream`.
+    //
+    // Necessary for certain CUDA functions outside of this
+    // module that expect a bare `CUstream`.
+    pub(crate) fn as_inner(&self) -> CUstream {
+        self.inner
+    }
+
     /// Destroy a `Stream`, returning an error.
     ///
     /// Destroying a stream can return errors from previous asynchronous work. This function

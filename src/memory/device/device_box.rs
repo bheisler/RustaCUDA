@@ -1,8 +1,10 @@
 use crate::error::{CudaResult, DropResult, ToResult};
+use crate::memory::device::AsyncCopyDestination;
 use crate::memory::device::CopyDestination;
 use crate::memory::malloc::{cuda_free, cuda_malloc};
 use crate::memory::DeviceCopy;
 use crate::memory::DevicePointer;
+use crate::stream::Stream;
 use cuda_sys::cuda;
 use std::fmt::{self, Pointer};
 use std::mem;
@@ -303,6 +305,35 @@ impl<T: DeviceCopy> CopyDestination<DeviceBox<T>> for DeviceBox<T> {
                 cuda::cuMemcpyDtoD_v2(val.ptr.as_raw_mut() as u64, self.ptr.as_raw() as u64, size)
                     .to_result()?
             }
+        }
+        Ok(())
+    }
+}
+impl<T: DeviceCopy> AsyncCopyDestination<DeviceBox<T>> for DeviceBox<T> {
+    unsafe fn async_copy_from(&mut self, val: &DeviceBox<T>, stream: &Stream) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            cuda::cuMemcpyDtoDAsync_v2(
+                self.ptr.as_raw_mut() as u64,
+                val.ptr.as_raw() as u64,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
+        }
+        Ok(())
+    }
+
+    unsafe fn async_copy_to(&self, val: &mut DeviceBox<T>, stream: &Stream) -> CudaResult<()> {
+        let size = mem::size_of::<T>();
+        if size != 0 {
+            cuda::cuMemcpyDtoDAsync_v2(
+                val.ptr.as_raw_mut() as u64,
+                self.ptr.as_raw() as u64,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
         }
         Ok(())
     }
