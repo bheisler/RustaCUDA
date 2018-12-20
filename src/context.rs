@@ -37,70 +37,80 @@
 //! For most commmon uses (one device, one OS thread) it should suffice to create a single context:
 //!
 //! ```
-//! use rustacuda;
 //! use rustacuda::device::Device;
 //! use rustacuda::context::{Context, ContextFlags};
-//!
-//! rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-//! let device = Device::get_device(0).unwrap();
-//! let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
+//! use std::error::Error;
+//! # fn main () -> Result<(), Box<dyn Error>> {
+//! 
+//! rustacuda::init(rustacuda::CudaFlags::empty())?;
+//! let device = Device::get_device(0)?;
+//! let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
 //! // call RustaCUDA functions which use the context
 //!
 //! // The context will be destroyed when dropped or it falls out of scope.
 //! drop(context);
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! If you have multiple OS threads that each submit work to the same device, you can get a handle
 //! to the single context and pass it to each thread.
 //!
 //! ```
-//! # use rustacuda;
+//! # use rustacuda::context::{Context, ContextFlags, CurrentContext};
 //! # use rustacuda::device::Device;
-//! # use rustacuda::context::{Context, CurrentContext, ContextFlags};
-//! #
-//! # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-//! # let device = Device::get_device(0).unwrap();
-//! // As before
-//! let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-//!
-//! let mut join_handles = vec![];
-//! for _ in 0..4 {
-//!     let unowned = context.get_unowned();
-//!     let join_handle = std::thread::spawn(move || {
-//!         CurrentContext::set_current(&unowned).unwrap();
-//!         // Call RustaCUDA functions which use the context
-//!     });
-//!     join_handles.push(join_handle);
-//! }
-//!
-//! // We must ensure that the other threads are not using the context when it's destroyed.
-//! for handle in join_handles {
-//!     handle.join().unwrap();
-//! }
-//!
-//! // Now it's safe to drop the context.
-//! drop(context);
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! #    rustacuda::init(rustacuda::CudaFlags::empty())?;
+//! #    let device = Device::get_device(0)?;
+//!     // As before
+//!     let context =
+//!         Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+//!     let mut join_handles = vec![];
+//! 
+//!     for _ in 0..4 {
+//!         let unowned = context.get_unowned();
+//!         let join_handle = std::thread::spawn(move || {
+//!             CurrentContext::set_current(&unowned).unwrap();
+//!             // Call RustaCUDA functions which use the context
+//!         });
+//!         join_handles.push(join_handle);
+//!     }
+//!     // We must ensure that the other threads are not using the context when it's destroyed.
+//!     for handle in join_handles {
+//!         handle.join().unwrap();
+//!     }
+//!     // Now it's safe to drop the context.
+//!     drop(context);
+//! #    Ok(())
+//! # }
 //! ```
 //!
 //! If you have multiple devices, each device needs its own context.
 //!
 //! ```
-//! # use rustacuda;
+//! # use rustacuda::context::{Context, ContextFlags, ContextStack, CurrentContext};
 //! # use rustacuda::device::Device;
-//! # use rustacuda::context::{Context, ContextStack, ContextFlags, CurrentContext};
-//! #
-//! # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-//! // Create and pop contexts for each device
-//! let contexts = Device::devices().unwrap()
-//!     .map(|device| {
-//!         let ctx = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device.unwrap()).unwrap();
-//!         ContextStack::pop().unwrap();
-//!         ctx
-//!     })
-//!     .collect::<Vec<Context>>();
-//!
-//! CurrentContext::set_current(&contexts[0]).unwrap();
-//! // Call RustaCUDA functions which use the context
+//! # use std::error::Error;
+//! # 
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! #     rustacuda::init(rustacuda::CudaFlags::empty())?;
+//!     // Create and pop contexts for each device
+//!     let mut contexts = vec![];
+//!     for device in Device::devices()? {
+//!         let device = device?;
+//!         let ctx =
+//!             Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+//!         ContextStack::pop()?;
+//!         contexts.push(ctx);
+//!     }
+//!     CurrentContext::set_current(&contexts[0])?;
+//! 
+//!     // Call Rustacuda functions which will use the context
+//! 
+//! #     drop(contexts);
+//! #     Ok(())
+//! # }
 //! ```
 
 use crate::device::Device;
