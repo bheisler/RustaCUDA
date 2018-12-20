@@ -61,28 +61,28 @@
 //! # use rustacuda::device::Device;
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! #    rustacuda::init(rustacuda::CudaFlags::empty())?;
-//! #    let device = Device::get_device(0)?;
-//!     // As before
-//!     let context =
-//!         Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-//!     let mut join_handles = vec![];
+//! # rustacuda::init(rustacuda::CudaFlags::empty())?;
+//! # let device = Device::get_device(0)?;
+//!   // As before
+//!   let context =
+//!     Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+//!   let mut join_handles = vec![];
 //! 
-//!     for _ in 0..4 {
-//!         let unowned = context.get_unowned();
-//!         let join_handle = std::thread::spawn(move || {
-//!             CurrentContext::set_current(&unowned).unwrap();
-//!             // Call RustaCUDA functions which use the context
-//!         });
-//!         join_handles.push(join_handle);
-//!     }
-//!     // We must ensure that the other threads are not using the context when it's destroyed.
-//!     for handle in join_handles {
-//!         handle.join().unwrap();
-//!     }
-//!     // Now it's safe to drop the context.
-//!     drop(context);
-//! #    Ok(())
+//!   for _ in 0..4 {
+//!     let unowned = context.get_unowned();
+//!     let join_handle = std::thread::spawn(move || {
+//!     CurrentContext::set_current(&unowned).unwrap();
+//!     // Call RustaCUDA functions which use the context
+//!   });
+//!   join_handles.push(join_handle);
+//!   }
+//!   // We must ensure that the other threads are not using the context when it's destroyed.
+//!   for handle in join_handles {
+//!       handle.join().unwrap();
+//!   }
+//!   // Now it's safe to drop the context.
+//!   drop(context);
+//! # Ok(())
 //! # }
 //! ```
 //!
@@ -94,22 +94,22 @@
 //! # use std::error::Error;
 //! # 
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! #     rustacuda::init(rustacuda::CudaFlags::empty())?;
-//!     // Create and pop contexts for each device
-//!     let mut contexts = vec![];
-//!     for device in Device::devices()? {
-//!         let device = device?;
-//!         let ctx =
-//!             Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-//!         ContextStack::pop()?;
-//!         contexts.push(ctx);
-//!     }
-//!     CurrentContext::set_current(&contexts[0])?;
+//! # rustacuda::init(rustacuda::CudaFlags::empty())?;
+//! // Create and pop contexts for each device
+//! let mut contexts = vec![];
+//! for device in Device::devices()? {
+//!     let device = device?;
+//!     let ctx =
+//!         Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+//!     ContextStack::pop()?;
+//!     contexts.push(ctx);
+//! }
+//! CurrentContext::set_current(&contexts[0])?;
 //! 
-//!     // Call Rustacuda functions which will use the context
+//!  // Call Rustacuda functions which will use the context
 //! 
-//! #     drop(contexts);
-//! #     Ok(())
+//! # drop(contexts);
+//! # Ok(())
 //! # }
 //! ```
 
