@@ -7,7 +7,7 @@
 //! device. Although it is possible to have multiple contexts associated with a single device, this
 //! is strongly discouraged as it can cause a significant loss of performance.
 //!
-//! CUDA keeps a thread-local s tack of contexts which the programmer can push to or pop from.
+//! CUDA keeps a thread-local stack of contexts which the programmer can push to or pop from.
 //! The top context in that stack is known as the "current" context and it is used in most CUDA
 //! API calls. One context can be safely made current in multiple CPU threads.
 //!
