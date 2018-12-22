@@ -41,7 +41,7 @@
 //! use rustacuda::context::{Context, ContextFlags};
 //! use std::error::Error;
 //! # fn main () -> Result<(), Box<dyn Error>> {
-//! 
+//!
 //! rustacuda::init(rustacuda::CudaFlags::empty())?;
 //! let device = Device::get_device(0)?;
 //! let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -67,7 +67,7 @@
 //!   let context =
 //!     Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
 //!   let mut join_handles = vec![];
-//! 
+//!
 //!   for _ in 0..4 {
 //!     let unowned = context.get_unowned();
 //!     let join_handle = std::thread::spawn(move || {
@@ -92,7 +92,7 @@
 //! # use rustacuda::context::{Context, ContextFlags, ContextStack, CurrentContext};
 //! # use rustacuda::device::Device;
 //! # use std::error::Error;
-//! # 
+//! #
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! # rustacuda::init(rustacuda::CudaFlags::empty())?;
 //! // Create and pop contexts for each device
@@ -105,9 +105,9 @@
 //!     contexts.push(ctx);
 //! }
 //! CurrentContext::set_current(&contexts[0])?;
-//! 
+//!
 //!  // Call Rustacuda functions which will use the context
-//! 
+//!
 //! # drop(contexts);
 //! # Ok(())
 //! # }
@@ -246,13 +246,17 @@ impl Context {
     /// # Example:
     ///
     /// ```
-    /// use rustacuda;
-    /// use rustacuda::device::Device;
-    /// use rustacuda::context::{Context, ContextFlags};
-    ///
-    /// rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
+    /// # use rustacuda::device::Device;
+    /// # use rustacuda::context::{Context, ContextFlags};
+    /// # use std::error::Error;
+    /// #
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    ///    rustacuda::init(rustacuda::CudaFlags::empty())?;
+    ///    let device = Device::get_device(0)?;
+    ///    let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    ///    let version = context.get_api_version()?;
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn create_and_push(flags: ContextFlags, device: Device) -> CudaResult<Context> {
         unsafe {
@@ -277,14 +281,17 @@ impl Context {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags};
+    /// # use std::error::Error;
     /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let version = context.get_api_version().unwrap();
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let version = context.get_api_version()?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_api_version(&self) -> CudaResult<CudaApiVersion> {
         unsafe {
@@ -304,14 +311,17 @@ impl Context {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags};
+    /// # use std::error::Error;
     /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
     /// let unowned = context.get_unowned();
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_unowned(&self) -> UnownedContext {
         UnownedContext { inner: self.inner }
@@ -325,20 +335,23 @@ impl Context {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags};
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// match Context::drop(context) {
-    ///     Ok(()) => println!("Successfully destroyed"),
-    ///     Err((e, ctx)) => {
-    ///         println!("Failed to destroy context: {:?}", e);
-    ///         // Do something with ctx
-    ///     },
-    /// }
+    /// # use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// #     rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// #     let device = Device::get_device(0)?;
+    ///      let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    ///      match Context::drop(context) {
+    ///          Ok(()) => println!("Successfully destroyed"),
+    ///          Err((e, ctx)) => {
+    ///              println!("Failed to destroy context: {:?}", e);
+    ///              // Do something with ctx
+    ///          },
+    ///      }
+    /// #     Ok(())
+    /// # }
     /// ```
     pub fn drop(mut ctx: Context) -> DropResult<Context> {
         if ctx.inner.is_null() {
@@ -406,15 +419,19 @@ impl UnownedContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags};
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
     /// let unowned = context.get_unowned();
-    /// let version = unowned.get_api_version().unwrap();
+    /// let version = unowned.get_api_version()?;
+    /// # 
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_api_version(&self) -> CudaResult<CudaApiVersion> {
         unsafe {
@@ -437,14 +454,20 @@ impl ContextStack {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags, ContextStack};
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let unowned = ContextStack::pop().unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let unowned = context.get_unowned();
+    /// let version = unowned.get_api_version()?;
+    /// let unowned = ContextStack::pop()?;
+    /// # 
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn pop() -> CudaResult<UnownedContext> {
         unsafe {
@@ -459,15 +482,20 @@ impl ContextStack {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags, ContextStack};
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let unowned = ContextStack::pop().unwrap();
-    /// ContextStack::push(&unowned).unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let unowned = context.get_unowned();
+    /// let version = unowned.get_api_version()?;
+    /// let unowned = ContextStack::pop()?;
+    /// ContextStack::push(&unowned)?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn push<C: ContextHandle>(ctx: &C) -> CudaResult<()> {
         unsafe {
@@ -503,14 +531,17 @@ impl CurrentContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let cache_config = CurrentContext::get_cache_config().unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let cache_config = CurrentContext::get_cache_config()?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_cache_config() -> CudaResult<CacheConfig> {
         unsafe {
@@ -526,14 +557,17 @@ impl CurrentContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let device = CurrentContext::get_device().unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let device = CurrentContext::get_device()?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_device() -> CudaResult<Device> {
         unsafe {
@@ -548,14 +582,17 @@ impl CurrentContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let flags = CurrentContext::get_flags().unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let flags = CurrentContext::get_flags()?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_flags() -> CudaResult<ContextFlags> {
         unsafe {
@@ -570,14 +607,17 @@ impl CurrentContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, ResourceLimit };
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let stack_size = CurrentContext::get_resource_limit(ResourceLimit::StackSize).unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let stack_size = CurrentContext::get_resource_limit(ResourceLimit::StackSize)?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_resource_limit(resource: ResourceLimit) -> CudaResult<usize> {
         unsafe {
@@ -592,14 +632,17 @@ impl CurrentContext {
     /// # Example:
     ///
     /// ```
-    /// # use rustacuda;
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, ResourceLimit };
-    /// #
-    /// # rustacuda::init(rustacuda::CudaFlags::empty()).unwrap();
-    /// # let device = Device::get_device(0).unwrap();
-    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device).unwrap();
-    /// let stack_size = CurrentContext::get_resource_limit(ResourceLimit::StackSize).unwrap();
+    /// #  use std::error::Error;
+    /// # 
+    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
+    /// # let device = Device::get_device(0)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let stack_size = CurrentContext::get_resource_limit(ResourceLimit::StackSize)?;
+    /// #  Ok(())
+    /// # }
     /// ```
     pub fn get_shared_memory_config() -> CudaResult<SharedMemoryConfig> {
         unsafe {
