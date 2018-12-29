@@ -63,25 +63,25 @@
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! # rustacuda::init(rustacuda::CudaFlags::empty())?;
 //! # let device = Device::get_device(0)?;
-//!   // As before
-//!   let context =
+//! // As before
+//! let context =
 //!     Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-//!   let mut join_handles = vec![];
+//! let mut join_handles = vec![];
 //!
-//!   for _ in 0..4 {
+//! for _ in 0..4 {
 //!     let unowned = context.get_unowned();
 //!     let join_handle = std::thread::spawn(move || {
 //!         CurrentContext::set_current(&unowned).unwrap();
-//!     // Call RustaCUDA functions which use the context
-//!   });
-//!   join_handles.push(join_handle);
-//!   }
-//!   // We must ensure that the other threads are not using the context when it's destroyed.
-//!   for handle in join_handles {
-//!       handle.join().unwrap();
-//!   }
-//!   // Now it's safe to drop the context.
-//!   drop(context);
+//!         // Call RustaCUDA functions which use the context
+//!     });
+//!     join_handles.push(join_handle);
+//! }
+//! // We must ensure that the other threads are not using the context when it's destroyed.
+//! for handle in join_handles {
+//!     handle.join().unwrap();
+//! }
+//! // Now it's safe to drop the context.
+//! drop(context);
 //! # Ok(())
 //! # }
 //! ```
@@ -106,7 +106,7 @@
 //! }
 //! CurrentContext::set_current(&contexts[0])?;
 //!
-//!  // Call RustaCUDA functions which will use the context
+//! // Call RustaCUDA functions which will use the context
 //!
 //! # Ok(())
 //! # }
@@ -424,7 +424,7 @@ impl UnownedContext {
     /// # fn main () -> Result<(), Box<dyn Error>>{
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
-    /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
+    /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
     /// let unowned = context.get_unowned();
     /// let version = unowned.get_api_version()?;
     /// #
@@ -460,8 +460,6 @@ impl ContextStack {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-    /// let unowned = context.get_unowned();
-    /// let version = unowned.get_api_version()?;
     /// let unowned = ContextStack::pop()?;
     /// #
     /// # Ok(())
@@ -488,8 +486,6 @@ impl ContextStack {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-    /// let unowned = context.get_unowned();
-    /// let version = unowned.get_api_version()?;
     /// let unowned = ContextStack::pop()?;
     /// ContextStack::push(&unowned)?;
     /// # Ok(())
@@ -638,7 +634,7 @@ impl CurrentContext {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
-    /// let stack_size = CurrentContext::get_resource_limit(ResourceLimit::StackSize)?;
+    /// let shared_mem_config = CurrentContext::get_shared_memory_config()?;
     /// # Ok(())
     /// # }
     /// ```
@@ -842,7 +838,7 @@ impl CurrentContext {
         }
     }
 
-    /// Block for a context's tasks to complete
+    /// Block to wait for a context's tasks to complete.
     pub fn synchronize() -> CudaResult<()> {
         unsafe {
             cuda::cuCtxSynchronize().to_result()?;
