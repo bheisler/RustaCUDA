@@ -18,14 +18,14 @@ transfer data to and from the GPU, and load and launch compute kernels written i
 
 ## Table of Contents
 - [Table of Contents](#table-of-contents)
-    - [Goals](#goals)
-    - [Roadmap](#roadmap)
-    - [Quickstart](#quickstart)
-    - [Contributing](#contributing)
-    - [Maintenance](#maintenance)
-    - [License](#license)
-    - [Requirements](#requirements)
-    - [Related Projects](#related-projects)
+  - [Goals](#goals)
+  - [Roadmap](#roadmap)
+  - [Quickstart](#quickstart)
+  - [Contributing](#contributing)
+  - [Maintenance](#maintenance)
+  - [License](#license)
+  - [Requirements](#requirements)
+  - [Related Projects](#related-projects)
 
 ### Goals
 
@@ -66,7 +66,24 @@ Before using RustaCUDA, you must install the CUDA development libraries for your
 8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
 drivers.
 
-Add the following to your `Cargo.toml`:
+First, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
+
+```text
+export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
+```
+
+Some Ubuntu users have encountered linker errors when using CUDA_LIBRARY_PATH. If you see an error
+like this:
+
+```text
+  = note: /usr/bin/ld: cannot find -lcudart                                                              
+          /usr/bin/ld: cannot find -lcublas                                                              
+          collect2: error: ld returned 1 exit status 
+```
+
+Using `LIBRARY_PATH` instead of `CUDA_LIBRARY_PATH` seems to help.
+
+Now, to start building a basic CUDA crate. Add the following to your `Cargo.toml`:
 
 ```yaml
 [dependencies]
@@ -86,13 +103,7 @@ extern crate rustacuda_derive;
 extern crate rustacuda_core;
 ```
 
-Finally, set the `CUDA_LIBRARY_PATH` environment variable to the location of your CUDA headers:
-
-```text
-export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
-```
-
-First, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
+Next, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
 the resources directory for your application. Then add this code to your `main.rs` file:
 
 ```rust
@@ -150,6 +161,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
+```
+
+If everything is working, you should be able to run `cargo run` and see the output:
+
+```text
+Sum is 30.0
 ```
 
 ### Contributing
