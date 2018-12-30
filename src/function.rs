@@ -173,16 +173,20 @@ impl<'a> Function<'a> {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// # let module = Module::load_from_string(&ptx).unwrap();
-    /// # let name = CString::new("sum").unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
     /// use rustacuda::function::FunctionAttribute;
-    /// let function = module.get_function(&name).unwrap();
-    /// let shared_memory = function.get_attribute(FunctionAttribute::SharedMemorySizeBytes).unwrap();
+    /// let function = module.get_function(&name)?;
+    /// let shared_memory = function.get_attribute(FunctionAttribute::SharedMemorySizeBytes)?;
     /// println!("This function uses {} bytes of shared memory", shared_memory);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_attribute(&self, attr: FunctionAttribute) -> CudaResult<i32> {
         unsafe {
@@ -213,15 +217,19 @@ impl<'a> Function<'a> {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// # let module = Module::load_from_string(&ptx).unwrap();
-    /// # let name = CString::new("sum").unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
     /// use rustacuda::context::CacheConfig;
-    /// let mut function = module.get_function(&name).unwrap();
-    /// function.set_cache_config(CacheConfig::PreferL1).unwrap();
+    /// let mut function = module.get_function(&name)?;
+    /// function.set_cache_config(CacheConfig::PreferL1)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn set_cache_config(&mut self, config: CacheConfig) -> CudaResult<()> {
         unsafe { cuda::cuFuncSetCacheConfig(self.inner, transmute(config)).to_result() }
@@ -237,15 +245,19 @@ impl<'a> Function<'a> {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
-    /// # let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// # let module = Module::load_from_string(&ptx).unwrap();
-    /// # let name = CString::new("sum").unwrap();
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
     /// use rustacuda::context::SharedMemoryConfig;
-    /// let mut function = module.get_function(&name).unwrap();
-    /// function.set_shared_memory_config(SharedMemoryConfig::EightByteBankSize).unwrap();
+    /// let mut function = module.get_function(&name)?;
+    /// function.set_shared_memory_config(SharedMemoryConfig::EightByteBankSize)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn set_shared_memory_config(&mut self, cfg: SharedMemoryConfig) -> CudaResult<()> {
         unsafe { cuda::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).to_result() }
@@ -302,25 +314,26 @@ impl<'a> Function<'a> {
 ///
 /// ```
 /// # #[macro_use]
-/// # extern crate rustacuda;
+/// # use rustacuda::*;
+/// # use std::error::Error;
 /// use rustacuda::memory::*;
 /// use rustacuda::module::Module;
 /// use rustacuda::stream::*;
 /// use std::ffi::CString;
 ///
-/// # fn main() {
+/// # fn main() ->Result<(), Box<dyn Error>>{
 ///
 /// // Set up the context, load the module, and create a stream to run kernels in.
-/// let _ctx = rustacuda::quick_init().unwrap();
-/// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-/// let module = Module::load_from_string(&ptx).unwrap();
-/// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+/// let _ctx = rustacuda::quick_init()?;
+/// let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+/// let module = Module::load_from_string(&ptx)?;
+/// let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
 ///
 /// // Create buffers for data
-/// let mut in_x = DeviceBuffer::from_slice(&[1.0f32; 10]).unwrap();
-/// let mut in_y = DeviceBuffer::from_slice(&[2.0f32; 10]).unwrap();
-/// let mut out_1 = DeviceBuffer::from_slice(&[0.0f32; 10]).unwrap();
-/// let mut out_2 = DeviceBuffer::from_slice(&[0.0f32; 10]).unwrap();
+/// let mut in_x = DeviceBuffer::from_slice(&[1.0f32; 10])?;
+/// let mut in_y = DeviceBuffer::from_slice(&[2.0f32; 10])?;
+/// let mut out_1 = DeviceBuffer::from_slice(&[0.0f32; 10])?;
+/// let mut out_2 = DeviceBuffer::from_slice(&[0.0f32; 10])?;
 ///
 /// // This kernel adds each element in `in_x` and `in_y` and writes the result into `out`.
 /// unsafe {
@@ -335,11 +348,11 @@ impl<'a> Function<'a> {
 ///     // kernel launches are asynchronous so errors caused by the kernel (eg. invalid memory
 ///     // access) will show up later at some other CUDA API call (probably at `synchronize()`
 ///     // below).
-///     result.unwrap();
+///     result?;
 ///
 ///     // Launch the kernel again using the `function` form:
-///     let function_name = CString::new("sum").unwrap();
-///     let sum = module.get_function(&function_name).unwrap();
+///     let function_name = CString::new("sum")?;
+///     let sum = module.get_function(&function_name)?;
 ///     // Launch with 1x1x1 (1) blocks of 10x1x1 (10) threads, to show that you can use tuples to
 ///     // configure grid and block size.
 ///     let result = launch!(sum<<<(1, 1, 1), (10, 1, 1), 0, stream>>>(
@@ -348,21 +361,21 @@ impl<'a> Function<'a> {
 ///         out_2.as_device_ptr(),
 ///         out_2.len()
 ///     ));
-///     result.unwrap();
+///     result?;
 /// }
 ///
 /// // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-/// stream.synchronize().unwrap();
+/// stream.synchronize()?;
 ///
 /// // Copy the results back to host memory
 /// let mut out_host = [0.0f32; 20];
-/// out_1.copy_to(&mut out_host[0..10]).unwrap();
-/// out_2.copy_to(&mut out_host[10..20]).unwrap();
+/// out_1.copy_to(&mut out_host[0..10])?;
+/// out_2.copy_to(&mut out_host[10..20])?;
 ///
 /// for x in out_host.iter() {
 ///     assert_eq!(3.0, *x);
 /// }
-///
+/// # Ok(())
 /// # }
 /// ```
 ///
@@ -406,27 +419,29 @@ mod test {
     use crate::quick_init;
     use crate::stream::{Stream, StreamFlags};
     use std::ffi::CString;
+    use std::error::Error;
 
     #[test]
-    fn test_launch() {
+    fn test_launch() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
-        let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx_text).unwrap();
+        let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx_text)?;
 
         unsafe {
-            let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128]).unwrap();
-            let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128]).unwrap();
-            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128).unwrap();
+            let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128])?;
+            let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128])?;
+            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128)?;
 
-            let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len())).unwrap();
-            stream.synchronize().unwrap();
+            let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len()))?;
+            stream.synchronize()?;
 
             let mut out_host = [0f32; 128];
-            out.copy_to(&mut out_host[..]).unwrap();
+            out.copy_to(&mut out_host[..])?;
             for x in out_host.iter() {
                 assert_eq!(3, *x as u32);
             }
         }
+    Ok(())
     }
 }

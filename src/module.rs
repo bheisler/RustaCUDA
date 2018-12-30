@@ -25,12 +25,16 @@ impl Module {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let filename = CString::new("./resources/add.ptx").unwrap();
-    /// let module = Module::load_from_file(&filename).unwrap();
+    /// let filename = CString::new("./resources/add.ptx")?;
+    /// let module = Module::load_from_file(&filename)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn load_from_file(filename: &CStr) -> CudaResult<Module> {
         unsafe {
@@ -55,12 +59,16 @@ impl Module {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let image = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// let module = Module::load_from_string(&image).unwrap();
+    /// let image = CString::new(include_str!("../resources/add.ptx"))?;
+    /// let module = Module::load_from_string(&image)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn load_from_string(image: &CStr) -> CudaResult<Module> {
         unsafe {
@@ -87,17 +95,21 @@ impl Module {
     /// ```
     /// # use rustacuda::*;
     /// # use rustacuda::memory::CopyDestination;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// let module = Module::load_from_string(&ptx).unwrap();
-    /// let name = CString::new("my_constant").unwrap();
-    /// let symbol = module.get_global::<u32>(&name).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// let module = Module::load_from_string(&ptx)?;
+    /// let name = CString::new("my_constant")?;
+    /// let symbol = module.get_global::<u32>(&name)?;
     /// let mut host_const = 0;
-    /// symbol.copy_to(&mut host_const).unwrap();
+    /// symbol.copy_to(&mut host_const)?;
     /// assert_eq!(314, host_const);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_global<'a, T: DeviceCopy>(&'a self, name: &CStr) -> CudaResult<Symbol<'a, T>> {
         unsafe {
@@ -125,14 +137,18 @@ impl Module {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// let module = Module::load_from_string(&ptx).unwrap();
-    /// let name = CString::new("sum").unwrap();
-    /// let function = module.get_function(&name).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// let module = Module::load_from_string(&ptx)?;
+    /// let name = CString::new("sum")?;
+    /// let function = module.get_function(&name)?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_function<'a>(&'a self, name: &CStr) -> CudaResult<Function<'a>> {
         unsafe {
@@ -157,12 +173,14 @@ impl Module {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::module::Module;
     /// use std::ffi::CString;
     ///
-    /// let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-    /// let module = Module::load_from_string(&ptx).unwrap();
+    /// let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// let module = Module::load_from_string(&ptx)?;
     /// match Module::drop(module) {
     ///     Ok(()) => println!("Successfully destroyed"),
     ///     Err((e, module)) => {
@@ -170,6 +188,8 @@ impl Module {
     ///         // Do something with module
     ///     },
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn drop(mut module: Module) -> DropResult<Module> {
         if module.inner.is_null() {
@@ -252,53 +272,58 @@ mod test {
     use super::*;
     use crate::quick_init;
     use std::ffi::CString;
+    use std::error::Error;
 
     #[test]
-    fn test_load_from_file() {
+    fn test_load_from_file() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let filename = CString::new("./resources/add.ptx").unwrap();
-        let module = Module::load_from_file(&filename).unwrap();
-        drop(module)
+        let filename = CString::new("./resources/add.ptx")?;
+        let module = Module::load_from_file(&filename)?;
+        drop(module);
+        Ok(())
     }
 
     #[test]
-    fn test_load_from_memory() {
+    fn test_load_from_memory() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
-        let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx_text).unwrap();
-        drop(module)
+        let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx_text)?;
+        drop(module);
+        Ok(())
     }
 
     #[test]
-    fn test_copy_from_module() {
+    fn test_copy_from_module() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx)?;
 
-        let constant_name = CString::new("my_constant").unwrap();
-        let symbol = module.get_global::<u32>(&constant_name).unwrap();
+        let constant_name = CString::new("my_constant")?;
+        let symbol = module.get_global::<u32>(&constant_name)?;
 
         let mut constant_copy = 0u32;
-        symbol.copy_to(&mut constant_copy).unwrap();
+        symbol.copy_to(&mut constant_copy)?;
         assert_eq!(314, constant_copy);
+        Ok(())
     }
 
     #[test]
-    fn test_copy_to_module() {
+    fn test_copy_to_module() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx)?;
 
-        let constant_name = CString::new("my_constant").unwrap();
-        let mut symbol = module.get_global::<u32>(&constant_name).unwrap();
+        let constant_name = CString::new("my_constant")?;
+        let mut symbol = module.get_global::<u32>(&constant_name)?;
 
-        symbol.copy_from(&100).unwrap();
+        symbol.copy_from(&100)?;
 
         let mut constant_copy = 0u32;
-        symbol.copy_to(&mut constant_copy).unwrap();
+        symbol.copy_to(&mut constant_copy)?;
         assert_eq!(100, constant_copy);
+        Ok(())
     }
 }
