@@ -369,39 +369,45 @@ impl Iterator for Devices {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::error::Error;
 
-    fn test_init() {
-        crate::init(crate::CudaFlags::empty()).unwrap();
+    fn test_init() -> Result<(), Box<dyn Error>>{
+        crate::init(crate::CudaFlags::empty())?;
+        Ok(())
     }
 
     #[test]
-    fn test_num_devices() {
+    fn test_num_devices() -> Result<(), Box<dyn Error>>{
         test_init();
-        let num_devices = Device::num_devices().unwrap();
+        let num_devices = Device::num_devices()?;
         assert!(num_devices > 0);
+        Ok(())
     }
 
     #[test]
-    fn test_devices() {
+    fn test_devices() -> Result<(), Box<dyn Error>>{
         test_init();
-        let num_devices = Device::num_devices().unwrap();
-        let all_devices: CudaResult<Vec<_>> = Device::devices().unwrap().collect();
-        let all_devices = all_devices.unwrap();
+        let num_devices = Device::num_devices()?;
+        let all_devices: CudaResult<Vec<_>> = Device::devices()?.collect();
+        let all_devices = all_devices?;
         assert_eq!(num_devices as usize, all_devices.len());
+        Ok(())
     }
 
     #[test]
-    fn test_get_name() {
+    fn test_get_name() -> Result<(), Box<dyn Error>>{
         test_init();
-        let device_name = Device::get_device(0).unwrap().name().unwrap();
+        let device_name = Device::get_device(0)?.name()?;
         println!("{}", device_name);
+        Ok(())
     }
 
     #[test]
-    fn test_get_memory() {
+    fn test_get_memory() -> Result<(), Box<dyn Error>>{
         test_init();
-        let memory = Device::get_device(0).unwrap().total_memory().unwrap();
+        let memory = Device::get_device(0)?.total_memory()?;
         println!("{}", memory);
+        Ok(())
     }
 
     // Ensure that the two enums always stay aligned.

@@ -419,27 +419,29 @@ mod test {
     use crate::quick_init;
     use crate::stream::{Stream, StreamFlags};
     use std::ffi::CString;
+    use std::error::Error;
 
     #[test]
-    fn test_launch() {
+    fn test_launch() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
-        let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx_text).unwrap();
+        let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx_text)?;
 
         unsafe {
-            let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128]).unwrap();
-            let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128]).unwrap();
-            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128).unwrap();
+            let mut in_x = DeviceBuffer::from_slice(&[2.0f32; 128])?;
+            let mut in_y = DeviceBuffer::from_slice(&[1.0f32; 128])?;
+            let mut out: DeviceBuffer<f32> = DeviceBuffer::uninitialized(128)?;
 
-            let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
-            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len())).unwrap();
-            stream.synchronize().unwrap();
+            let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+            launch!(module.sum<<<1, 128, 0, stream>>>(in_x.as_device_ptr(), in_y.as_device_ptr(), out.as_device_ptr(), out.len()))?;
+            stream.synchronize()?;
 
             let mut out_host = [0f32; 128];
-            out.copy_to(&mut out_host[..]).unwrap();
+            out.copy_to(&mut out_host[..])?;
             for x in out_host.iter() {
                 assert_eq!(3, *x as u32);
             }
         }
+    Ok(())
     }
 }
