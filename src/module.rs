@@ -272,53 +272,58 @@ mod test {
     use super::*;
     use crate::quick_init;
     use std::ffi::CString;
+    use std::error::Error;
 
     #[test]
-    fn test_load_from_file() {
+    fn test_load_from_file() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let filename = CString::new("./resources/add.ptx").unwrap();
-        let module = Module::load_from_file(&filename).unwrap();
-        drop(module)
+        let filename = CString::new("./resources/add.ptx")?;
+        let module = Module::load_from_file(&filename)?;
+        drop(module);
+        Ok(())
     }
 
     #[test]
-    fn test_load_from_memory() {
+    fn test_load_from_memory() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
-        let ptx_text = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx_text).unwrap();
-        drop(module)
+        let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx_text)?;
+        drop(module);
+        Ok(())
     }
 
     #[test]
-    fn test_copy_from_module() {
+    fn test_copy_from_module() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx)?;
 
-        let constant_name = CString::new("my_constant").unwrap();
-        let symbol = module.get_global::<u32>(&constant_name).unwrap();
+        let constant_name = CString::new("my_constant")?;
+        let symbol = module.get_global::<u32>(&constant_name)?;
 
         let mut constant_copy = 0u32;
-        symbol.copy_to(&mut constant_copy).unwrap();
+        symbol.copy_to(&mut constant_copy)?;
         assert_eq!(314, constant_copy);
+        Ok(())
     }
 
     #[test]
-    fn test_copy_to_module() {
+    fn test_copy_to_module() -> Result<(), Box<dyn Error>>{
         let _context = quick_init();
 
-        let ptx = CString::new(include_str!("../resources/add.ptx")).unwrap();
-        let module = Module::load_from_string(&ptx).unwrap();
+        let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+        let module = Module::load_from_string(&ptx)?;
 
-        let constant_name = CString::new("my_constant").unwrap();
-        let mut symbol = module.get_global::<u32>(&constant_name).unwrap();
+        let constant_name = CString::new("my_constant")?;
+        let mut symbol = module.get_global::<u32>(&constant_name)?;
 
-        symbol.copy_from(&100).unwrap();
+        symbol.copy_from(&100)?;
 
         let mut constant_copy = 0u32;
-        symbol.copy_to(&mut constant_copy).unwrap();
+        symbol.copy_to(&mut constant_copy)?;
         assert_eq!(100, constant_copy);
+        Ok(())
     }
 }
