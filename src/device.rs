@@ -111,11 +111,11 @@ pub enum DeviceAttribute {
     /// Pitch alignment requirement for textures
     TexturePitchAlignment = 51,
     /// Maximum cubemap texture width/height
-    MaximumTexturecubemapWidth = 52,
+    MaximumTextureCubemapWidth = 52,
     /// Maximum cubemap layered texture width/height
-    MaximumTexturecubemapLayeredWidth = 53,
+    MaximumTextureCubemapLayeredWidth = 53,
     /// Maximum layers in a cubemap layered texture
-    MaximumTexturecubemapLayeredLayers = 54,
+    MaximumTextureCubemapLayeredLayers = 54,
     /// Maximum 1D surface width
     MaximumSurface1DWidth = 55,
     /// Maximum 2D surface width
