@@ -307,7 +307,7 @@ impl Context {
     /// documentation for safety details!).
     ///
     /// # Example:
-    ///
+    ////*  */
     /// ```
     /// # use rustacuda::device::Device;
     /// # use rustacuda::context::{Context, ContextFlags};

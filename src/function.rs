@@ -420,6 +420,7 @@ mod test {
     use crate::stream::{Stream, StreamFlags};
     use std::error::Error;
     use std::ffi::CString;
+    use std::error::Error;
 
     #[test]
     fn test_launch() -> Result<(), Box<dyn Error>> {
