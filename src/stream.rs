@@ -60,7 +60,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
@@ -94,7 +94,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
@@ -122,7 +122,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
@@ -155,7 +155,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
@@ -194,7 +194,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
@@ -254,7 +254,7 @@ impl Stream {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///

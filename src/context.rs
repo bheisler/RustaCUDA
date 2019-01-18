@@ -249,7 +249,7 @@ impl Context {
     /// # use rustacuda::context::{Context, ContextFlags};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -283,7 +283,7 @@ impl Context {
     /// # use rustacuda::context::{Context, ContextFlags};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -313,7 +313,7 @@ impl Context {
     /// # use rustacuda::context::{Context, ContextFlags};
     /// # use std::error::Error;
     /// #
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -337,7 +337,7 @@ impl Context {
     /// # use rustacuda::context::{Context, ContextFlags};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -421,7 +421,7 @@ impl UnownedContext {
     /// # use rustacuda::context::{Context, ContextFlags};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -456,7 +456,7 @@ impl ContextStack {
     /// # use rustacuda::context::{Context, ContextFlags, ContextStack};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -482,7 +482,7 @@ impl ContextStack {
     /// # use rustacuda::context::{Context, ContextFlags, ContextStack};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// # let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -529,7 +529,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -555,7 +555,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -580,7 +580,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -605,7 +605,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, ResourceLimit };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -630,7 +630,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, ResourceLimit };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -662,7 +662,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext};
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -702,7 +702,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, CacheConfig };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -746,7 +746,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, ResourceLimit };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -773,7 +773,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext, SharedMemoryConfig };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -794,7 +794,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
@@ -823,7 +823,7 @@ impl CurrentContext {
     /// # use rustacuda::context::{ Context, ContextFlags, CurrentContext };
     /// # use std::error::Error;
     /// #
-    /// # fn main () -> Result<(), Box<dyn Error>>{
+    /// # fn main () -> Result<(), Box<dyn Error>> {
     /// # rustacuda::init(rustacuda::CudaFlags::empty())?;
     /// # let device = Device::get_device(0)?;
     /// let context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;

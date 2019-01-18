@@ -174,7 +174,7 @@ impl<'a> Function<'a> {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
@@ -218,7 +218,7 @@ impl<'a> Function<'a> {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
@@ -246,7 +246,7 @@ impl<'a> Function<'a> {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # let _ctx = quick_init()?;
     /// # use rustacuda::module::Module;
     /// # use std::ffi::CString;
@@ -321,7 +321,7 @@ impl<'a> Function<'a> {
 /// use rustacuda::stream::*;
 /// use std::ffi::CString;
 ///
-/// # fn main() ->Result<(), Box<dyn Error>>{
+/// # fn main() -> Result<(), Box<dyn Error>> {
 ///
 /// // Set up the context, load the module, and create a stream to run kernels in.
 /// let _ctx = rustacuda::quick_init()?;
@@ -418,11 +418,11 @@ mod test {
     use crate::memory::DeviceBuffer;
     use crate::quick_init;
     use crate::stream::{Stream, StreamFlags};
-    use std::ffi::CString;
     use std::error::Error;
+    use std::ffi::CString;
 
     #[test]
-    fn test_launch() -> Result<(), Box<dyn Error>>{
+    fn test_launch() -> Result<(), Box<dyn Error>> {
         let _context = quick_init();
         let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
         let module = Module::load_from_string(&ptx_text)?;
@@ -442,6 +442,6 @@ mod test {
                 assert_eq!(3, *x as u32);
             }
         }
-    Ok(())
+        Ok(())
     }
 }

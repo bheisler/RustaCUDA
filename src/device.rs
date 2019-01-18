@@ -211,7 +211,7 @@ impl Device {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # init(CudaFlags::empty())?;
     /// use rustacuda::device::Device;
     /// let num_devices = Device::num_devices()?;
@@ -235,7 +235,7 @@ impl Device {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # init(CudaFlags::empty())?;
     /// use rustacuda::device::Device;
     /// let device = Device::get_device(0)?;
@@ -257,7 +257,7 @@ impl Device {
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
-    /// # fn main() -> Result<(), Box<dyn Error>>{
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// # init(CudaFlags::empty())?;
     /// use rustacuda::device::Device;
     /// for device in Device::devices()? {
@@ -371,13 +371,13 @@ mod test {
     use super::*;
     use std::error::Error;
 
-    fn test_init() -> Result<(), Box<dyn Error>>{
+    fn test_init() -> Result<(), Box<dyn Error>> {
         crate::init(crate::CudaFlags::empty())?;
         Ok(())
     }
 
     #[test]
-    fn test_num_devices() -> Result<(), Box<dyn Error>>{
+    fn test_num_devices() -> Result<(), Box<dyn Error>> {
         test_init();
         let num_devices = Device::num_devices()?;
         assert!(num_devices > 0);
@@ -385,7 +385,7 @@ mod test {
     }
 
     #[test]
-    fn test_devices() -> Result<(), Box<dyn Error>>{
+    fn test_devices() -> Result<(), Box<dyn Error>> {
         test_init();
         let num_devices = Device::num_devices()?;
         let all_devices: CudaResult<Vec<_>> = Device::devices()?.collect();
@@ -395,7 +395,7 @@ mod test {
     }
 
     #[test]
-    fn test_get_name() -> Result<(), Box<dyn Error>>{
+    fn test_get_name() -> Result<(), Box<dyn Error>> {
         test_init();
         let device_name = Device::get_device(0)?.name()?;
         println!("{}", device_name);
@@ -403,7 +403,7 @@ mod test {
     }
 
     #[test]
-    fn test_get_memory() -> Result<(), Box<dyn Error>>{
+    fn test_get_memory() -> Result<(), Box<dyn Error>> {
         test_init();
         let memory = Device::get_device(0)?.total_memory()?;
         println!("{}", memory);
