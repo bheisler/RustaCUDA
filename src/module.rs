@@ -272,15 +272,11 @@ mod test {
     use super::*;
     use crate::quick_init;
     use std::error::Error;
-    use std::ffi::CString;
     use std::error::Error;
+    use std::ffi::CString;
 
     #[test]
-<<<<<<< HEAD
     fn test_load_from_file() -> Result<(), Box<dyn Error>> {
-=======
-    fn test_load_from_file() -> Result<(), Box<dyn Error>> {
->>>>>>> bc676f42390f02ada450e79292e271d6c79f984e
         let _context = quick_init();
 
         let filename = CString::new("./resources/add.ptx")?;
@@ -290,11 +286,7 @@ mod test {
     }
 
     #[test]
-<<<<<<< HEAD
     fn test_load_from_memory() -> Result<(), Box<dyn Error>> {
-=======
-    fn test_load_from_memory() -> Result<(), Box<dyn Error>> {
->>>>>>> bc676f42390f02ada450e79292e271d6c79f984e
         let _context = quick_init();
         let ptx_text = CString::new(include_str!("../resources/add.ptx"))?;
         let module = Module::load_from_string(&ptx_text)?;
@@ -303,11 +295,7 @@ mod test {
     }
 
     #[test]
-<<<<<<< HEAD
     fn test_copy_from_module() -> Result<(), Box<dyn Error>> {
-=======
-    fn test_copy_from_module() -> Result<(), Box<dyn Error>> {
->>>>>>> bc676f42390f02ada450e79292e271d6c79f984e
         let _context = quick_init();
 
         let ptx = CString::new(include_str!("../resources/add.ptx"))?;
@@ -323,11 +311,7 @@ mod test {
     }
 
     #[test]
-<<<<<<< HEAD
     fn test_copy_to_module() -> Result<(), Box<dyn Error>> {
-=======
-    fn test_copy_to_module() -> Result<(), Box<dyn Error>> {
->>>>>>> bc676f42390f02ada450e79292e271d6c79f984e
         let _context = quick_init();
 
         let ptx = CString::new(include_str!("../resources/add.ptx"))?;
