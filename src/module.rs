@@ -272,7 +272,6 @@ mod test {
     use super::*;
     use crate::quick_init;
     use std::error::Error;
-    use std::error::Error;
     use std::ffi::CString;
 
     #[test]
