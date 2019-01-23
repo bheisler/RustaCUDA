@@ -65,6 +65,8 @@
 //! responsible for reconstructing the `UnifiedBuffer` using `from_raw_parts()` and dropping it to
 //! ensure that the memory allocation is safely cleaned up.
 
+pub mod array;
+
 mod device;
 mod locked;
 mod malloc;
