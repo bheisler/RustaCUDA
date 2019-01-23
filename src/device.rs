@@ -378,7 +378,7 @@ mod test {
 
     #[test]
     fn test_num_devices() -> Result<(), Box<dyn Error>> {
-        test_init();
+        test_init()?;
         let num_devices = Device::num_devices()?;
         assert!(num_devices > 0);
         Ok(())
@@ -386,7 +386,7 @@ mod test {
 
     #[test]
     fn test_devices() -> Result<(), Box<dyn Error>> {
-        test_init();
+        test_init()?;
         let num_devices = Device::num_devices()?;
         let all_devices: CudaResult<Vec<_>> = Device::devices()?.collect();
         let all_devices = all_devices?;
@@ -396,7 +396,7 @@ mod test {
 
     #[test]
     fn test_get_name() -> Result<(), Box<dyn Error>> {
-        test_init();
+        test_init()?;
         let device_name = Device::get_device(0)?.name()?;
         println!("{}", device_name);
         Ok(())
@@ -404,7 +404,7 @@ mod test {
 
     #[test]
     fn test_get_memory() -> Result<(), Box<dyn Error>> {
-        test_init();
+        test_init()?;
         let memory = Device::get_device(0)?.total_memory()?;
         println!("{}", memory);
         Ok(())
