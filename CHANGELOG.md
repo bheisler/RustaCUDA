@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
-- `Stream::add_callback` function, which adds a host-side callback into a stream's queue.
+- `Stream::add_callback` function, which adds a host-side callback into a stream's queue
+- Added basic support for allocating CUDA arrays.
 
 ## [0.1.0] - December 1, 2018
 - Initial Release
