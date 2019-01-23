@@ -59,14 +59,18 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
     /// // With default priority
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
     ///
     /// // With specific priority
-    /// let priority = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
+    /// let priority = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into())?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn new(flags: StreamFlags, priority: Option<i32>) -> CudaResult<Self> {
         unsafe {
@@ -89,11 +93,15 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None).unwrap();
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
     /// assert_eq!(StreamFlags::NON_BLOCKING, stream.get_flags().unwrap());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_flags(&self) -> CudaResult<StreamFlags> {
         unsafe {
@@ -113,11 +121,15 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
-    /// println!("{}", stream.get_priority().unwrap());
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into())?;
+    /// println!("{}", stream.get_priority()?);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_priority(&self) -> CudaResult<i32> {
         unsafe {
@@ -142,10 +154,12 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into())?;
     ///
     /// // ... queue up some work on the stream
     ///
@@ -154,7 +168,8 @@ impl Stream {
     /// }));
     ///
     /// // ... queue up some more work on the stream
-    ///
+    /// # Ok(())
+    /// # }
     pub fn add_callback<T>(&self, callback: Box<T>) -> CudaResult<()>
     where
         T: FnOnce(CudaResult<()>) + Send,
@@ -178,15 +193,19 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into())?;
     ///
     /// // ... queue up some work on the stream
     ///
     /// // Wait for the work to be completed.
-    /// stream.synchronize().unwrap();
+    /// stream.synchronize()?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn synchronize(&self) -> CudaResult<()> {
         unsafe { cuda::cuStreamSynchronize(self.inner).to_result() }
@@ -234,10 +253,12 @@ impl Stream {
     ///
     /// ```
     /// # use rustacuda::*;
-    /// # let _ctx = quick_init().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
     /// use rustacuda::stream::{Stream, StreamFlags};
     ///
-    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into()).unwrap();
+    /// let stream = Stream::new(StreamFlags::NON_BLOCKING, 1i32.into())?;
     /// match Stream::drop(stream) {
     ///     Ok(()) => println!("Successfully destroyed"),
     ///     Err((e, stream)) => {
@@ -245,6 +266,8 @@ impl Stream {
     ///         // Do something with stream
     ///     },
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn drop(mut stream: Stream) -> DropResult<Stream> {
         if stream.inner.is_null() {
