@@ -269,7 +269,7 @@ impl ArrayObject {
             // Exhaustively check bounds of arrays
             let device = CurrentContext::get_device()?;
 
-            let attr = |attr| Ok(1..(device.get_attribute(attr)? as usize) + 1);
+            let attr = |attr| Ok(1..=(device.get_attribute(attr)? as usize));
 
             let (description, bounds) = if descriptor.flags().contains(ArrayObjectFlags::CUBEMAP) {
                 if descriptor.flags().contains(ArrayObjectFlags::LAYERED) {
@@ -287,7 +287,7 @@ impl ArrayObject {
                         vec![[
                             attr(DeviceAttribute::MaximumTextureCubemapWidth)?,
                             attr(DeviceAttribute::MaximumTextureCubemapWidth)?,
-                            6..7,
+                            6..=6,
                         ]],
                     )
                 }
@@ -306,7 +306,7 @@ impl ArrayObject {
                         "1D Layered",
                         vec![[
                             attr(DeviceAttribute::MaximumTexture1DLayeredWidth)?,
-                            0..1,
+                            0..=0,
                             attr(DeviceAttribute::MaximumTexture1DLayeredLayers)?,
                         ]],
                     )
@@ -337,7 +337,7 @@ impl ArrayObject {
                         vec![[
                             attr(DeviceAttribute::MaximumTexture2DGatherWidth)?,
                             attr(DeviceAttribute::MaximumTexture2DGatherHeight)?,
-                            0..1,
+                            0..=0,
                         ]],
                     )
                 } else {
@@ -346,7 +346,7 @@ impl ArrayObject {
                         vec![[
                             attr(DeviceAttribute::MaximumTexture2DWidth)?,
                             attr(DeviceAttribute::MaximumTexture2DHeight)?,
-                            0..1,
+                            0..=0,
                         ]],
                     )
                 }
@@ -354,15 +354,17 @@ impl ArrayObject {
                 assert!(descriptor.width() > 0);
                 (
                     "1D",
-                    vec![[attr(DeviceAttribute::MaximumTexture1DWidth)?, 0..1, 0..1]],
+                    vec![[attr(DeviceAttribute::MaximumTexture1DWidth)?, 0..=0, 0..=0]],
                 )
             };
 
-            if !bounds.iter().any(|x| {
-                (descriptor.width() >= x[0].start && descriptor.width() < x[0].end)
-                    && (descriptor.height() >= x[1].start && descriptor.height() < x[1].end)
-                    && (descriptor.depth() >= x[2].start && descriptor.depth() < x[2].end)
-            }) {
+            let bounds_invalid = |x: &[::std::ops::RangeInclusive<usize>; 3]| {
+                (descriptor.width() >= *x[0].start() && descriptor.width() <= *x[0].end())
+                    && (descriptor.height() >= *x[1].start() && descriptor.height() <= *x[1].end())
+                    && (descriptor.depth() >= *x[2].start() && descriptor.depth() <= *x[2].end())
+            };
+
+            if !bounds.iter().any(bounds_invalid) {
                 panic!(
                     "The dimensions of the {} ArrayObject did not fall within the valid bounds for \
                      the array. descriptor = {:?}, dims = {:?}, valid bounds = {:?}",
