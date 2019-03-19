@@ -312,7 +312,12 @@ impl Device {
     pub fn name(self) -> CudaResult<String> {
         unsafe {
             let mut name = [0u8; 128]; // Hopefully this is big enough...
-            cuDeviceGetName(&mut name[0] as *mut u8 as *mut i8, 128, self.device).to_result()?;
+            cuDeviceGetName(
+                &mut name[0] as *mut u8 as *mut ::std::os::raw::c_char,
+                128,
+                self.device,
+            )
+            .to_result()?;
             let cstr = CStr::from_bytes_with_nul_unchecked(&name);
             Ok(cstr.to_string_lossy().into_owned())
         }
