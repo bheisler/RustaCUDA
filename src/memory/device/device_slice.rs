@@ -1,7 +1,9 @@
 use crate::error::{CudaResult, ToResult};
+use crate::memory::device::AsyncCopyDestination;
 use crate::memory::device::{CopyDestination, DeviceBuffer};
 use crate::memory::DeviceCopy;
 use crate::memory::DevicePointer;
+use crate::stream::Stream;
 use cuda_sys::cuda;
 use std::iter::{ExactSizeIterator, FusedIterator};
 use std::mem;
@@ -503,5 +505,92 @@ impl<T: DeviceCopy> CopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
 
     fn copy_to(&self, val: &mut DeviceBuffer<T>) -> CudaResult<()> {
         self.copy_to(val as &mut DeviceSlice<T>)
+    }
+}
+impl<T: DeviceCopy, I: AsRef<[T]> + AsMut<[T]> + ?Sized> AsyncCopyDestination<I>
+    for DeviceSlice<T>
+{
+    unsafe fn async_copy_from(&mut self, val: &I, stream: &Stream) -> CudaResult<()> {
+        let val = val.as_ref();
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            cuda::cuMemcpyHtoDAsync_v2(
+                self.0.as_mut_ptr() as u64,
+                val.as_ptr() as *const c_void,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
+        }
+        Ok(())
+    }
+
+    unsafe fn async_copy_to(&self, val: &mut I, stream: &Stream) -> CudaResult<()> {
+        let val = val.as_mut();
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            cuda::cuMemcpyDtoHAsync_v2(
+                val.as_mut_ptr() as *mut c_void,
+                self.as_ptr() as u64,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
+        }
+        Ok(())
+    }
+}
+impl<T: DeviceCopy> AsyncCopyDestination<DeviceSlice<T>> for DeviceSlice<T> {
+    unsafe fn async_copy_from(&mut self, val: &DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            cuda::cuMemcpyDtoDAsync_v2(
+                self.0.as_mut_ptr() as u64,
+                val.as_ptr() as u64,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
+        }
+        Ok(())
+    }
+
+    unsafe fn async_copy_to(&self, val: &mut DeviceSlice<T>, stream: &Stream) -> CudaResult<()> {
+        assert!(
+            self.len() == val.len(),
+            "destination and source slices have different lengths"
+        );
+        let size = mem::size_of::<T>() * self.len();
+        if size != 0 {
+            cuda::cuMemcpyDtoDAsync_v2(
+                val.as_mut_ptr() as u64,
+                self.as_ptr() as u64,
+                size,
+                stream.as_inner(),
+            )
+            .to_result()?
+        }
+        Ok(())
+    }
+}
+impl<T: DeviceCopy> AsyncCopyDestination<DeviceBuffer<T>> for DeviceSlice<T> {
+    unsafe fn async_copy_from(&mut self, val: &DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
+        self.async_copy_from(val as &DeviceSlice<T>, stream)
+    }
+
+    unsafe fn async_copy_to(&self, val: &mut DeviceBuffer<T>, stream: &Stream) -> CudaResult<()> {
+        self.async_copy_to(val as &mut DeviceSlice<T>, stream)
     }
 }
