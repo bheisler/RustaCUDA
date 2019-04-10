@@ -32,14 +32,18 @@ pub trait CopyDestination<O: ?Sized>: crate::private::Sealed {
 ///
 /// ## Safety:
 ///
-/// The fuctions of this trait are unsafe, as these functions return while the copying
-/// from source to destination is likely still taking place in the background, allowing
-/// the source and destination arguments to be potentially used in unsafe ways.
+/// The functions of this trait are unsafe because they return control to the calling code while
+/// the copy operation could still be occurring in the background. This could allow calling code
+/// to read, modify or deallocate the destination buffer, or to modify or deallocate the source
+/// buffer resulting in a data race and undefined behavior.
 ///
-/// Thus to enforce safety, the following invariants should be enforced:
+/// Thus to enforce safety, the following invariants must be upheld:
 /// * The source and destination are not deallocated
-/// * The source is read-only
+/// * The source is not modified
 /// * The destination is not written or read by any other operation
+///
+/// These invariants must be preserved until the stream is synchronized or an event queued after
+/// the copy is triggered.
 ///
 pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     /// Asynchronously copy data from `source`. `source` must be the same size as `self`.
