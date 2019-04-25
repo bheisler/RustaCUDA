@@ -2,7 +2,6 @@
 
 use crate::error::{CudaResult, ToResult};
 use cuda_sys::cuda::*;
-use std::ffi::CStr;
 use std::ops::Range;
 
 /// All supported device attributes for [Device::get_attribute](struct.Device.html#method.get_attribute)
@@ -313,13 +312,18 @@ impl Device {
         unsafe {
             let mut name = [0u8; 128]; // Hopefully this is big enough...
             cuDeviceGetName(
-                &mut name[0] as *mut u8 as *mut ::std::os::raw::c_char,
+                name.as_mut_ptr() as *mut ::std::os::raw::c_char,
                 128,
                 self.device,
             )
             .to_result()?;
-            let cstr = CStr::from_bytes_with_nul_unchecked(&name);
-            Ok(cstr.to_string_lossy().into_owned())
+
+            let string: String = name
+                .iter()
+                .filter(|&&c| c != b'\0')
+                .map(|&c| char::from(c))
+                .collect();
+            Ok(string)
         }
     }
 
