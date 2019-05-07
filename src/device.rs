@@ -323,7 +323,7 @@ impl Device {
                 .cloned()
                 .position(|byte| byte == 0)
                 .expect("Expected device name to fit in 128 bytes and be nul-terminated.");
-            let cstr = CStr::from_bytes_with_nul_unchecked(&name[0..(nul_index + 1)]);
+            let cstr = CStr::from_bytes_with_nul_unchecked(&name[0..=nul_index]);
             Ok(cstr.to_string_lossy().into_owned())
         }
     }
