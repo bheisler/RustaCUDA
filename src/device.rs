@@ -318,7 +318,12 @@ impl Device {
                 self.device,
             )
             .to_result()?;
-            let cstr = CStr::from_bytes_with_nul_unchecked(&name);
+            let nul_index = name
+                .iter()
+                .cloned()
+                .position(|byte| byte == 0)
+                .expect("Expected device name to fit in 128 bytes and be nul-terminated.");
+            let cstr = CStr::from_bytes_with_nul_unchecked(&name[0..(nul_index + 1)]);
             Ok(cstr.to_string_lossy().into_owned())
         }
     }
@@ -404,6 +409,7 @@ mod test {
         test_init()?;
         let device_name = Device::get_device(0)?.name()?;
         println!("{}", device_name);
+        assert!(device_name.len() < 127);
         Ok(())
     }
 
