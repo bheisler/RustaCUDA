@@ -279,6 +279,14 @@ impl Event {
         }
     }
 
+    // Get the inner `CUevent` from the `Event`.
+    //
+    // Necessary for certain CUDA functions outside of this
+    // module that expect a bare `CUevent`.
+    pub(crate) fn as_inner(&self) -> CUevent {
+        self.0
+    }
+
     /// Destroy an `Event` returning an error.
     ///
     /// Destroying an event can return errors from previous asynchronous work.
