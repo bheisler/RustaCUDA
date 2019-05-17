@@ -248,7 +248,7 @@ impl Stream {
     /// event.record(&stream_0)?;
     ///
     /// // wait until the work on stream_0 is finished before continuing stream_1
-    /// stream_1.wait_event(event)?;
+    /// stream_1.wait_event(event, StreamWaitEventFlags::DEFAULT)?;
     /// # Ok(())
     /// }
     /// ```

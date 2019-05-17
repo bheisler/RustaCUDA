@@ -1,5 +1,5 @@
-//! Events to track status and dependencies, and measure duration of work
-//! submitted to a CUDA stream.
+//! Events can be used to track status and dependencies, as well as to measure
+//! the duration of work submitted to a CUDA stream.
 //!
 //! In CUDA, most work is performed asynchronously. Events help to manage tasks
 //! scheduled on an asynchronous stream. This includes waiting for a task (or
@@ -9,6 +9,9 @@
 //! yet by RustaCUDA).
 //!
 //! Events may be reused multiple times.
+
+// TODO: I'm not sure that these events are/can be safe by Rust's model of safety; they inherently
+// create state which can be mutated even while an immutable borrow is held.
 
 use crate::cuda_sys::cuda::{
     cuEventCreate, cuEventDestroy_v2, cuEventElapsedTime, cuEventQuery, cuEventRecord,
@@ -23,7 +26,7 @@ use std::ptr;
 bitflags! {
     /// Bit flags for configuring a CUDA Event.
     ///
-    /// Nvidia claims that setting `DISABLE_TIMING` and `BLOCKING_SYNC` provides
+    /// The CUDA documentation claims that setting `DISABLE_TIMING` and `BLOCKING_SYNC` provides
     /// the best performance for `query()` and `stream.wait_event()`.
     pub struct EventFlags: u32 {
         /// The default event creation flag.
@@ -48,7 +51,7 @@ bitflags! {
 pub enum EventStatus {
     /// Ready indicates that all work captured by the event has been completed.
     ///
-    /// NVidia states that for Unified Memory, `EventStatus::Ready` is
+    /// The CUDA documentation states that for Unified Memory, `EventStatus::Ready` is
     /// equivalent to having called `Event::synchronize`.
     Ready,
 
@@ -88,10 +91,11 @@ impl Event {
         }
     }
 
-    /// Record the state of a stream at the time of the call.
+    /// Add the event to the given stream of work. The event will be completed when the stream
+    /// completes all previously-submitted work and reaches the event in the queue.
     ///
     /// This function is used together with `query`, `synchronize`, and
-    /// `elapsed_time_f32`. See the respective function for more information.
+    /// `elapsed_time_f32`. See the respective functions for more information.
     ///
     /// If the event is created with `EventFlags::BLOCKING_SYNC`, then `record`
     /// blocks until the event has actually been recorded.
@@ -114,7 +118,7 @@ impl Event {
     /// let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
     /// let event = Event::new(EventFlags::DEFAULT)?;
     ///
-    /// // do some work ...
+    /// // submit some work ...
     ///
     /// event.record(&stream)?;
     /// # Ok(())
@@ -127,10 +131,9 @@ impl Event {
         }
     }
 
-    /// Return the current status of the event.
-    ///
-    /// The status captures the contents of the stream underlying the event. If
-    /// the stream is empty, `query` will return `EventStatus::Ready`.
+    /// Return whether the stream this event was recorded on (see `record`) has processed this event
+    /// yet or not. A return value of `EventStatus::Ready` indicates that all work submitted before
+    /// the event has been completed.
     ///
     /// # Example
     ///
@@ -208,10 +211,9 @@ impl Event {
 
     /// Return the duration between two events.
     ///
-    /// The duration is computed in milliseconds with a resulution of
-    /// approximatly 0.5 microseconds. As `record` takes place asynchronously,
-    /// other work can be scheduled in between the events, thus yieling an
-    /// unexpectedly long duration.
+    /// The duration is computed in milliseconds with a resolution of
+    /// approximately 0.5 microseconds. This can be used to measure the duration of work
+    /// queued in between the two events.
     ///
     /// # Errors
     ///
