@@ -11,6 +11,7 @@
 //! a stream to be completed.
 
 use crate::error::{CudaResult, DropResult, ToResult};
+use crate::event::Event;
 use crate::function::{BlockSize, Function, GridSize};
 use cuda_sys::cuda::{self, cudaError_t, CUstream};
 use std::ffi::c_void;
@@ -36,6 +37,16 @@ bitflags! {
         /// most circumstances. However, it is recommended to use it anyway, as some other crate
         /// in this binary may be using the NULL stream directly.
         const NON_BLOCKING = 0x01;
+    }
+}
+
+bitflags! {
+    /// Bit flags for configuring a CUDA Stream waiting on an CUDA Event.
+    ///
+    /// Current versions of CUDA support only the default flag.
+    pub struct StreamWaitEventFlags: u32 {
+        /// No flags set.
+        const DEFAULT = 0x0;
     }
 }
 
@@ -209,6 +220,40 @@ impl Stream {
     /// ```
     pub fn synchronize(&self) -> CudaResult<()> {
         unsafe { cuda::cuStreamSynchronize(self.inner).to_result() }
+    }
+
+    /// Make the stream wait on an event.
+    ///
+    /// All future work submitted to the stream will wait for the event to
+    /// complete. Synchronization is performed on the device, if possible. The
+    /// event may originate from different context or device than the stream.
+    ///
+    /// # Example:
+    ///
+    /// ```
+    /// # use rustacuda::quick_init;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _context = quick_init()?;
+    /// use rustacuda::stream::{Stream, StreamFlags, StreamWaitEventFlags};
+    /// use rustacuda::event::{Event, EventFlags};
+    ///
+    /// let stream_0 = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+    /// let stream_1 = Stream::new(StreamFlags::NON_BLOCKING, None)?;
+    /// let event = Event::new(EventFlags::DEFAULT)?;
+    ///
+    /// // do some work on stream_0 ...
+    ///
+    /// // record an event
+    /// event.record(&stream_0)?;
+    ///
+    /// // wait until the work on stream_0 is finished before continuing stream_1
+    /// stream_1.wait_event(event)?;
+    /// # Ok(())
+    /// }
+    /// ```
+    pub fn wait_event(&self, event: Event, flags: StreamWaitEventFlags) -> CudaResult<()> {
+        unsafe { cuda::cuStreamWaitEvent(self.inner, event.as_inner(), flags.bits()).to_result() }
     }
 
     // Hidden implementation detail function. Highly unsafe. Use the `launch!` macro instead.

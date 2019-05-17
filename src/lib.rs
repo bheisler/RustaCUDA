@@ -164,6 +164,7 @@ pub use rustacuda_derive::*;
 pub mod context;
 pub mod device;
 pub mod error;
+pub mod event;
 pub mod function;
 pub mod memory;
 pub mod module;
