@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - `Stream::add_callback` function, which adds a host-side callback into a stream's queue
 - Added basic support for allocating CUDA arrays.
+- Add support for CUDA Events.
+- Add unsafe interface for asynchronous data copies.
+
+### Fixed
+- Fixed compile error on PPC64 architecture.
+- Fix bug where NUL bytes could be included in the device name string.
 
 ## [0.1.0] - December 1, 2018
 - Initial Release
