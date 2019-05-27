@@ -1,6 +1,63 @@
 use crate::memory::DeviceCopy;
-use core::fmt;
-use core::ptr;
+
+use core::{
+    cmp::Ordering,
+    fmt::{self, Debug, Pointer},
+    hash::{Hash, Hasher},
+    ptr,
+};
+
+macro_rules! derive_traits {
+    ( $( $Ptr:ty )* ) => ($(
+        impl<T: ?Sized> Debug for $Ptr {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                Debug::fmt(&self.0, f)
+            }
+        }
+        impl<T: ?Sized> Pointer for $Ptr {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                Pointer::fmt(&self.0, f)
+            }
+        }
+
+        impl<T: ?Sized> Hash for $Ptr {
+            fn hash<H: Hasher>(&self, h: &mut H) {
+                Hash::hash(&self.0, h);
+            }
+        }
+
+        impl<T: ?Sized> PartialEq for $Ptr {
+            fn eq(&self, other: &$Ptr) -> bool {
+                PartialEq::eq(&self.0, &other.0)
+            }
+            fn ne(&self, other: &$Ptr) -> bool {
+                PartialEq::ne(&self.0, &other.0)
+            }
+        }
+
+        impl<T: ?Sized> Eq for $Ptr {}
+
+        impl<T: ?Sized> PartialOrd for $Ptr {
+            fn partial_cmp(&self, other: &$Ptr) -> Option<Ordering> {
+                PartialOrd::partial_cmp(&self.0, &other.0)
+            }
+        }
+
+        impl<T: ?Sized> Ord for $Ptr {
+            fn cmp(&self, other: &$Ptr) -> Ordering {
+                Ord::cmp(&self.0, &other.0)
+            }
+        }
+
+        impl<T: ?Sized> Clone for $Ptr {
+            fn clone(&self) -> Self {
+                Self(self.0)
+            }
+        }
+        impl<T: ?Sized> Copy for $Ptr {}
+    )*)
+}
+derive_traits!(DevicePointer<T> UnifiedPointer<T>);
 
 /// A pointer to device memory.
 ///
@@ -14,24 +71,11 @@ use core::ptr;
 /// the other side of that boundary does not attempt to dereference the pointer on the CPU. It is
 /// thus possible to pass a `DevicePointer` to a CUDA kernel written in C.
 #[repr(transparent)]
-#[derive(Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
-pub struct DevicePointer<T>(*mut T);
-unsafe impl<T> DeviceCopy for DevicePointer<T> {}
-impl<T> DevicePointer<T> {
-    /// Returns a null device pointer.
-    ///
-    /// # Examples:
-    ///
-    /// ```
-    /// # let _context = rustacuda::quick_init().unwrap();
-    /// use rustacuda::memory::*;
-    /// let ptr : DevicePointer<u64> = DevicePointer::null();
-    /// assert!(ptr.is_null());
-    /// ```
-    pub fn null() -> Self {
-        unsafe { Self::wrap(ptr::null_mut()) }
-    }
+pub struct DevicePointer<T: ?Sized>(*mut T);
 
+unsafe impl<T: ?Sized> DeviceCopy for DevicePointer<T> {}
+
+impl<T: ?Sized> DevicePointer<T> {
     /// Wrap the given raw pointer in a DevicePointer. The given pointer is assumed to be a valid,
     /// device pointer or null.
     ///
@@ -107,6 +151,23 @@ impl<T> DevicePointer<T> {
         self.0.is_null()
     }
 
+    /// Returns a null device pointer.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let ptr : DevicePointer<u64> = DevicePointer::null();
+    /// assert!(ptr.is_null());
+    /// ```
+    pub fn null() -> Self
+    where
+        T: Sized,
+    {
+        unsafe { Self::wrap(ptr::null_mut()) }
+    }
+
     /// Calculates the offset from a device pointer.
     ///
     /// `count` is in units of T; eg. a `count` of 3 represents a pointer offset of
@@ -140,7 +201,10 @@ impl<T> DevicePointer<T> {
     ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    pub unsafe fn offset(self, count: isize) -> Self {
+    pub unsafe fn offset(self, count: isize) -> Self
+    where
+        T: Sized,
+    {
         Self::wrap(self.0.offset(count))
     }
 
@@ -174,7 +238,10 @@ impl<T> DevicePointer<T> {
     ///     cuda_free(dev_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    pub fn wrapping_offset(self, count: isize) -> Self {
+    pub fn wrapping_offset(self, count: isize) -> Self
+    where
+        T: Sized,
+    {
         unsafe { Self::wrap(self.0.wrapping_offset(count)) }
     }
 
@@ -324,17 +391,6 @@ impl<T> DevicePointer<T> {
         self.wrapping_offset((count as isize).wrapping_neg())
     }
 }
-impl<T> fmt::Pointer for DevicePointer<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Pointer::fmt(&self.0, f)
-    }
-}
-impl<T> Clone for DevicePointer<T> {
-    fn clone(&self) -> Self {
-        DevicePointer(self.0)
-    }
-}
-impl<T> Copy for DevicePointer<T> {}
 
 /// A pointer to unified memory.
 ///
@@ -347,24 +403,11 @@ impl<T> Copy for DevicePointer<T> {}
 /// `UnifiedPointer` through an FFI boundary to C code expecting a `*mut T`. It is
 /// thus possible to pass a `UnifiedPointer` to a CUDA kernel written in C.
 #[repr(transparent)]
-#[derive(Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct UnifiedPointer<T: DeviceCopy>(*mut T);
-unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
-impl<T: DeviceCopy> UnifiedPointer<T> {
-    /// Returns a null unified pointer.
-    ///
-    /// # Examples:
-    ///
-    /// ```
-    /// # let _context = rustacuda::quick_init().unwrap();
-    /// use rustacuda::memory::*;
-    /// let ptr : UnifiedPointer<u64> = UnifiedPointer::null();
-    /// assert!(ptr.is_null());
-    /// ```
-    pub fn null() -> Self {
-        unsafe { Self::wrap(ptr::null_mut()) }
-    }
+pub struct UnifiedPointer<T: ?Sized>(*mut T);
 
+unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
+
+impl<T: ?Sized> UnifiedPointer<T> {
     /// Wrap the given raw pointer in a UnifiedPointer. The given pointer is assumed to be a valid,
     /// unified-memory pointer or null.
     ///
@@ -440,6 +483,23 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
         self.0.is_null()
     }
 
+    /// Returns a null unified pointer.
+    ///
+    /// # Examples:
+    ///
+    /// ```
+    /// # let _context = rustacuda::quick_init().unwrap();
+    /// use rustacuda::memory::*;
+    /// let ptr : UnifiedPointer<u64> = UnifiedPointer::null();
+    /// assert!(ptr.is_null());
+    /// ```
+    pub fn null() -> Self
+    where
+        T: Sized,
+    {
+        unsafe { Self::wrap(ptr::null_mut()) }
+    }
+
     /// Calculates the offset from a unified pointer.
     ///
     /// `count` is in units of T; eg. a `count` of 3 represents a pointer offset of
@@ -473,7 +533,10 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    pub unsafe fn offset(self, count: isize) -> Self {
+    pub unsafe fn offset(self, count: isize) -> Self
+    where
+        T: Sized,
+    {
         Self::wrap(self.0.offset(count))
     }
 
@@ -507,7 +570,10 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     ///     cuda_free_unified(unified_ptr); // Must free the buffer using the original pointer
     /// }
     /// ```
-    pub fn wrapping_offset(self, count: isize) -> Self {
+    pub fn wrapping_offset(self, count: isize) -> Self
+    where
+        T: Sized,
+    {
         unsafe { Self::wrap(self.0.wrapping_offset(count)) }
     }
 
@@ -657,14 +723,3 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
         self.wrapping_offset((count as isize).wrapping_neg())
     }
 }
-impl<T: DeviceCopy> fmt::Pointer for UnifiedPointer<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Pointer::fmt(&self.0, f)
-    }
-}
-impl<T: DeviceCopy> Clone for UnifiedPointer<T> {
-    fn clone(&self) -> Self {
-        UnifiedPointer(self.0)
-    }
-}
-impl<T: DeviceCopy> Copy for UnifiedPointer<T> {}
