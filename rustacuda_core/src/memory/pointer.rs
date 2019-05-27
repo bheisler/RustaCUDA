@@ -30,9 +30,6 @@ macro_rules! derive_traits {
             fn eq(&self, other: &$Ptr) -> bool {
                 PartialEq::eq(&self.0, &other.0)
             }
-            fn ne(&self, other: &$Ptr) -> bool {
-                PartialEq::ne(&self.0, &other.0)
-            }
         }
 
         impl<T: ?Sized> Eq for $Ptr {}
