@@ -459,4 +459,22 @@ mod test_device_buffer {
             let _slice = &buffer[0..5];
         }
     }
+
+    #[test]
+    fn test_allocate_correct_size() {
+        use crate::context::CurrentContext;
+
+        let _context = crate::quick_init().unwrap();
+        let total_memory = CurrentContext::get_device()
+            .unwrap()
+            .total_memory()
+            .unwrap();
+
+        // Don't allocate all memory to leave some space for the display's frame buffer
+        let allocation_size = (total_memory * 3) / 4 / mem::size_of::<u64>();
+        unsafe {
+            // Test if allocation fails with an out-of-memory error
+            let _buffer = DeviceBuffer::<u64>::uninitialized(allocation_size).unwrap();
+        };
+    }
 }
