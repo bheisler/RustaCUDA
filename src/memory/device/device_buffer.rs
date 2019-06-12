@@ -1,4 +1,4 @@
-use crate::error::{CudaError, CudaResult, DropResult, ToResult};
+use crate::error::{CudaResult, DropResult, ToResult};
 use crate::memory::device::{AsyncCopyDestination, CopyDestination, DeviceSlice};
 use crate::memory::malloc::{cuda_free, cuda_malloc};
 use crate::memory::DeviceCopy;
@@ -39,12 +39,8 @@ impl<T> DeviceBuffer<T> {
     /// buffer.copy_from(&[0u64, 1, 2, 3, 4]).unwrap();
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
-            .ok_or(CudaError::InvalidMemoryAllocation)?;
-
-        let ptr = if bytes > 0 {
-            cuda_malloc(bytes)?
+        let ptr = if size > 0 && mem::size_of::<T>() > 0 {
+            cuda_malloc(size)?
         } else {
             DevicePointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
         };
@@ -79,12 +75,8 @@ impl<T> DeviceBuffer<T> {
     /// assert_eq!([0u64, 0, 0, 0, 0], host_values);
     /// ```
     pub unsafe fn zeroed(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
-            .ok_or(CudaError::InvalidMemoryAllocation)?;
-
-        let ptr = if bytes > 0 {
-            let mut ptr = cuda_malloc(bytes)?;
+        let ptr = if size > 0 && mem::size_of::<T>() > 0 {
+            let mut ptr = cuda_malloc(size)?;
             cuda::cuMemsetD8_v2(ptr.as_raw_mut() as u64, 0, size * mem::size_of::<T>())
                 .to_result()?;
             ptr

@@ -408,12 +408,8 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
-            .ok_or(CudaError::InvalidMemoryAllocation)?;
-
-        let ptr = if bytes > 0 {
-            cuda_malloc_unified(bytes)?
+        let ptr = if size > 0 && mem::size_of::<T>() > 0 {
+            cuda_malloc_unified(size)?
         } else {
             UnifiedPointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
         };
