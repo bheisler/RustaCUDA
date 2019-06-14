@@ -408,12 +408,8 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
-            .ok_or(CudaError::InvalidMemoryAllocation)?;
-
-        let ptr = if bytes > 0 {
-            cuda_malloc_unified(bytes)?
+        let ptr = if size > 0 && mem::size_of::<T>() > 0 {
+            cuda_malloc_unified(size)?
         } else {
             UnifiedPointer::wrap(ptr::NonNull::dangling().as_ptr() as *mut T)
         };
@@ -718,5 +714,23 @@ mod test_unified_buffer {
         let _context = crate::quick_init().unwrap();
         let err = UnifiedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
+    }
+
+    #[test]
+    fn test_allocate_correct_size() {
+        use crate::context::CurrentContext;
+
+        let _context = crate::quick_init().unwrap();
+        let total_memory = CurrentContext::get_device()
+            .unwrap()
+            .total_memory()
+            .unwrap();
+
+        // Don't allocate all memory to leave some space for the display's frame buffer
+        let allocation_size = (total_memory * 3) / 4 / mem::size_of::<u64>();
+        unsafe {
+            // Test if allocation fails with an out-of-memory error
+            let _buffer = UnifiedBuffer::<u64>::uninitialized(allocation_size).unwrap();
+        }
     }
 }

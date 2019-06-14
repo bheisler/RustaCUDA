@@ -93,12 +93,8 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// }
     /// ```
     pub unsafe fn uninitialized(size: usize) -> CudaResult<Self> {
-        let bytes = size
-            .checked_mul(mem::size_of::<T>())
-            .ok_or(CudaError::InvalidMemoryAllocation)?;
-
-        let ptr: *mut T = if bytes > 0 {
-            cuda_malloc_locked(bytes)?
+        let ptr: *mut T = if size > 0 && mem::size_of::<T>() > 0 {
+            cuda_malloc_locked(size)?
         } else {
             ptr::NonNull::dangling().as_ptr()
         };
@@ -331,5 +327,17 @@ mod test {
         let _context = crate::quick_init().unwrap();
         let err = LockedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
+    }
+
+    #[test]
+    fn test_allocate_correct_size() {
+        let _context = crate::quick_init().unwrap();
+
+        // Placeholder - read out available system memory here
+        let allocation_size = 1;
+        unsafe {
+            // Test if allocation fails with an out-of-memory error
+            let _buffer = LockedBuffer::<u64>::uninitialized(allocation_size).unwrap();
+        }
     }
 }
