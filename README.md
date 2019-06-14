@@ -50,7 +50,6 @@ RustaCUDA currently supports a minimum viable subset of the CUDA API (essentiall
 necessary to manage memory and launch basic kernels). This does not include:
 
 - Any asynchronous operation aside from kernel launches
-- Events
 - Access to CUDA 1/2/3D arrays and texture memory
 - Multi-GPU support
 - Runtime linking
