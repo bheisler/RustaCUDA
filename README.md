@@ -80,7 +80,12 @@ like this:
           collect2: error: ld returned 1 exit status 
 ```
 
-Using `LIBRARY_PATH` instead of `CUDA_LIBRARY_PATH` seems to help.
+Using `LIBRARY_PATH` instead of `CUDA_LIBRARY_PATH` seems to help, you can adjust that like this:
+
+```bash
+export C_INCLUDE_PATH="/usr/local/cuda/include"
+export LIBRARY_PATH="/usr/local/cuda/lib64"
+```
 
 Now, to start building a basic CUDA crate. Add the following to your `Cargo.toml`:
 
