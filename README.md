@@ -103,7 +103,11 @@ extern crate rustacuda_core;
 ```
 
 Next, download the `resources/add.ptx` file from the RustaCUDA repository and place it in
-the resources directory for your application. Then add this code to your `main.rs` file:
+the resources directory for your application.
+
+The *examples/* directory contains sample code that helps getting started. 
+To execute the most simple example, (adding two numbers on GPU),
+place this code to your `main.rs` file.
 
 ```rust
 #[macro_use]
