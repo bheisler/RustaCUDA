@@ -3,6 +3,7 @@
 //! Detailed documentation about allocating CUDA Arrays can be found in the
 //! [CUDA Driver API](https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html#group__CUDA__MEM_1gc2322c70b38c2984536c90ed118bb1d7)
 
+use std::mem::MaybeUninit;
 use std::os::raw::c_uint;
 
 use cuda_sys::cuda::{CUarray, CUarray_format, CUarray_format_enum};
@@ -376,9 +377,12 @@ impl ArrayObject {
             }
         }
 
-        let mut handle = unsafe { std::mem::uninitialized() };
-        unsafe { cuda_sys::cuda::cuArray3DCreate_v2(&mut handle, &descriptor.desc) }.to_result()?;
-        Ok(Self { handle })
+        let mut handle = MaybeUninit::uninit();
+        unsafe { cuda_sys::cuda::cuArray3DCreate_v2(handle.as_mut_ptr(), &descriptor.desc) }
+            .to_result()?;
+        Ok(Self {
+            handle: unsafe { handle.assume_init() },
+        })
     }
 
     /// Allocates a new CUDA Array that is up to 3-dimensions.
@@ -624,11 +628,16 @@ impl ArrayObject {
 
     /// Gets the descriptor associated with this array.
     pub fn descriptor(&self) -> CudaResult<ArrayDescriptor> {
-        let mut raw_descriptor = unsafe { std::mem::uninitialized() };
-        unsafe { cuda_sys::cuda::cuArray3DGetDescriptor_v2(&mut raw_descriptor, self.handle) }
-            .to_result()?;
+        // Use "zeroed" incase CUDA_ARRAY3D_DESCRIPTOR has uninitialized padding
+        let mut raw_descriptor = MaybeUninit::zeroed();
+        unsafe {
+            cuda_sys::cuda::cuArray3DGetDescriptor_v2(raw_descriptor.as_mut_ptr(), self.handle)
+        }
+        .to_result()?;
 
-        Ok(ArrayDescriptor::from_raw(raw_descriptor))
+        Ok(ArrayDescriptor::from_raw(unsafe {
+            raw_descriptor.assume_init()
+        }))
     }
 
     /// Try to destroy an `ArrayObject`. Can fail - if it does, returns the CUDA error and the
