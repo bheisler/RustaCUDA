@@ -8,8 +8,6 @@
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! struct ShouldFailTuple(Vec<u64>);
-//!
-//! fn main() {}
 //! ```
 //!
 //! ```compile_fail
@@ -19,8 +17,6 @@
 //!
 //! #[derive(Clone, DeviceCopy)]
 //! struct ShouldFailStruct{v: Vec<u64>}
-//!
-//! fn main() {}
 //! ```
 //!
 //! ```compile_fail
@@ -33,8 +29,6 @@
 //!     Unit,
 //!     Tuple(Vec<u64>),
 //! }
-//!
-//! fn main() {}
 //! ```
 //!
 //! ```compile_fail
@@ -47,8 +41,6 @@
 //!     Unit,
 //!     Struct{v: Vec<u64>},
 //! }
-//!
-//! fn main() {}
 //! ```
 //!
 //! ```compile_fail
@@ -61,6 +53,4 @@
 //!     u: *const u64,
 //!     o: *const i64,
 //! }
-//!
-//! fn main() {}
 //! ```
