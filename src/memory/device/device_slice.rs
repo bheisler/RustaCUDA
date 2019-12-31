@@ -291,13 +291,13 @@ impl<T> DeviceSlice<T> {
     ///
     /// This function is unsafe as there is no guarantee that the given pointer is valid for `len`
     /// elements, nor whether the lifetime inferred is a suitable lifetime for the returned slice.
-    /// 
+    ///
     /// This function is unsafe as there is no guarantee that the given pointer is valid for `len`
     /// elements, not whether the lifetime inferred is a suitable lifetime for the returned slice,
     /// as well as not being able to provide a non-aliasing guarantee of the returned
     /// mutable slice. `data` must be non-null and aligned even for zero-length
     /// slices as with `from_raw_parts`.
-    /// 
+    ///
     /// See the documentation of `from_raw_parts` for more details.
     pub unsafe fn from_raw_parts_mut<'a>(
         mut data: DevicePointer<T>,

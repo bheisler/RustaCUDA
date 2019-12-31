@@ -51,7 +51,7 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     /// Host memory used as a source or destination must be page-locked.
     ///
     /// # Safety
-    /// 
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
     /// # Errors
@@ -64,7 +64,7 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     /// Host memory used as a source or destination must be page-locked.
     ///
     /// # Safety
-    /// 
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
     /// # Errors

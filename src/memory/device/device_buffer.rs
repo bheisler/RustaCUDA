@@ -198,7 +198,7 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
     /// with a clone of the data in `slice`.
     ///
     /// # Safety
-    /// 
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
     /// # Errors
