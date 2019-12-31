@@ -20,7 +20,7 @@ unsafe impl<T> DeviceCopy for DevicePointer<T> {}
 impl<T> DevicePointer<T> {
     /// Returns a null device pointer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -40,7 +40,7 @@ impl<T> DevicePointer<T> {
     /// The given pointer must have been allocated with [`cuda_malloc`](fn.cuda_malloc.html) or
     /// be null.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -58,7 +58,7 @@ impl<T> DevicePointer<T> {
     /// Returns the contained pointer as a raw pointer. The returned pointer is not valid on the CPU
     /// and must not be dereferenced.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -76,7 +76,7 @@ impl<T> DevicePointer<T> {
     /// Returns the contained pointer as a mutable raw pointer. The returned pointer is not valid on the CPU
     /// and must not be dereferenced.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -92,7 +92,7 @@ impl<T> DevicePointer<T> {
     }
 
     /// Returns true if the pointer is null.
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -353,7 +353,7 @@ unsafe impl<T: DeviceCopy> DeviceCopy for UnifiedPointer<T> {}
 impl<T: DeviceCopy> UnifiedPointer<T> {
     /// Returns a null unified pointer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -373,7 +373,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
     /// The given pointer must have been allocated with
     /// [`cuda_malloc_unified`](fn.cuda_malloc_unified.html) or be null.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -390,7 +390,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
 
     /// Returns the contained pointer as a raw pointer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -407,7 +407,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
 
     /// Returns the contained pointer as a mutable raw pointer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -425,7 +425,7 @@ impl<T: DeviceCopy> UnifiedPointer<T> {
 
     /// Returns true if the pointer is null.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();

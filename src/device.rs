@@ -207,7 +207,7 @@ impl Device {
     /// Returns the number of devices with compute-capability 2.0 or greater which are available
     /// for execution.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
@@ -231,7 +231,7 @@ impl Device {
     ///
     /// Ordinal must be in the range `0..num_devices()`. If not, an error will be returned.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
@@ -253,7 +253,7 @@ impl Device {
 
     /// Return an iterator over all CUDA devices.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
@@ -275,7 +275,7 @@ impl Device {
 
     /// Returns the total amount of memory available on the device in bytes.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
@@ -297,7 +297,7 @@ impl Device {
 
     /// Returns the name of this device.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;
@@ -330,7 +330,7 @@ impl Device {
 
     /// Returns information about this device.
     ///
-    /// # Example:
+    /// # Example
     /// ```
     /// # use rustacuda::*;
     /// # use std::error::Error;

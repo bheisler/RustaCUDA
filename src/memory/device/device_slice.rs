@@ -169,7 +169,7 @@ impl<T> DeviceSlice<T> {
     ///
     /// Panics if `chunk_size` is 0.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -201,7 +201,7 @@ impl<T> DeviceSlice<T> {
     ///
     /// Panics if `chunk_size` is 0.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();

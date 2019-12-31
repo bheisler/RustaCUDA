@@ -26,11 +26,11 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, returns that error.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -53,17 +53,17 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// Since the backing memory is not initialized, this function is not safe. The caller must
     /// ensure that the backing memory is set to a valid value before it is read, else undefined
     /// behavior may occur.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, returns that error.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -89,13 +89,13 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// of `T`. This function may accept any pointer produced by the `cuMemAllocManaged` CUDA API
     /// call.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -117,13 +117,13 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// of `T`. This function may accept any pointer produced by the `cuMemAllocManaged` CUDA API
     /// call, such as one taken from `UnifiedBox::into_unified`.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -146,7 +146,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// `UnifiedBox::into_unified(b)` instead of `b.into_unified()` This is so that there is no conflict with
     /// a method on the inner type.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -166,7 +166,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     ///
     /// This is useful for passing the box to a kernel launch.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -203,7 +203,7 @@ impl<T: DeviceCopy> UnifiedBox<T> {
     /// Deallocating unified memory can return errors from previous asynchronous work. This function
     /// destroys the given box and returns the error and the un-destroyed box on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -334,12 +334,12 @@ impl<T: DeviceCopy + Clone> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -360,11 +360,11 @@ impl<T: DeviceCopy + Clone> UnifiedBuffer<T> {
     /// Allocate a new unified buffer of the same size as `slice`, initialized with a clone of
     /// the data in `slice`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -387,17 +387,17 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// Allocate a new unified buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// The caller must ensure that the contents of the buffer are initialized before reading from
     /// the buffer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -423,7 +423,7 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     ///
     /// Equivalent to `&s[..]`.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -439,7 +439,7 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     ///
     /// Equivalent to `&mut s[..]`.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -486,7 +486,7 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// that nothing else uses the pointer after calling this
     /// function.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -510,7 +510,7 @@ impl<T: DeviceCopy> UnifiedBuffer<T> {
     /// Deallocating unified memory can return errors from previous asynchronous work. This function
     /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();

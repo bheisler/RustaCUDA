@@ -169,7 +169,7 @@ impl<'a> Function<'a> {
 
     /// Returns information about a function.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -213,7 +213,7 @@ impl<'a> Function<'a> {
     /// This setting does nothing on devices where the size of the L1 cache and shared memory are
     /// fixed.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;
@@ -241,7 +241,7 @@ impl<'a> Function<'a> {
     /// shared memory bank size which is used for subsequent launches of this function. If not set,
     /// the context-wide setting will be used instead.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;
@@ -301,7 +301,7 @@ impl<'a> Function<'a> {
 /// In this variant, the `function` parameter must be a variable. Use this form to avoid looking up
 /// the kernel function for each call.
 ///
-/// # Safety:
+/// # Safety
 ///
 /// Launching kernels must be done in an `unsafe` block. Calling a kernel is similar to calling a
 /// foreign-language function, as the kernel itself could be written in C or unsafe Rust. The kernel
@@ -310,7 +310,7 @@ impl<'a> Function<'a> {
 /// be copied back to the host. The programmer must ensure that the host does not access device or
 /// unified memory that the kernel could write to until after calling `stream.synchronize()`.
 ///
-/// # Examples:
+/// # Examples
 ///
 /// ```
 /// # #[macro_use]

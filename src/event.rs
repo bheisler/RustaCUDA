@@ -69,7 +69,7 @@ pub struct Event(CUevent);
 impl Event {
     /// Create a new event with the specified flags.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::quick_init;
@@ -295,7 +295,7 @@ impl Event {
     /// This function destroys the given event and returns the error and the
     /// un-destroyed event on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;

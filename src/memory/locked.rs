@@ -19,12 +19,12 @@ impl<T: DeviceCopy + Clone> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s and initialized with
     /// clones of `value`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -45,11 +45,11 @@ impl<T: DeviceCopy + Clone> LockedBuffer<T> {
     /// Allocate a new page-locked buffer of the same size as `slice`, initialized with a clone of
     /// the data in `slice`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -72,17 +72,17 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// Allocate a new page-locked buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// The caller must ensure that the contents of the buffer are initialized before reading from
     /// the buffer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -108,7 +108,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     ///
     /// Equivalent to `&s[..]`.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -124,7 +124,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     ///
     /// Equivalent to `&mut s[..]`.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -159,7 +159,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// that nothing else uses the pointer after calling this
     /// function.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -186,7 +186,7 @@ impl<T: DeviceCopy> LockedBuffer<T> {
     /// Deallocating page-locked memory can return errors from previous asynchronous work. This function
     /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();

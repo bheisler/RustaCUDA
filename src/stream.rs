@@ -66,7 +66,7 @@ impl Stream {
     /// to get the range of valid priority values; if priority is set outside that range, it will
     /// be automatically clamped to the lowest or highest number in the range.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -100,7 +100,7 @@ impl Stream {
 
     /// Return the flags which were used to create this stream.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -128,7 +128,7 @@ impl Stream {
     /// If the stream was created with a priority outside the valid range, returns the clamped
     /// priority.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -161,7 +161,7 @@ impl Stream {
     /// The callback will be passed a `CudaResult<()>` indicating the
     /// current state of the device with `Ok(())` denoting normal operation.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -200,7 +200,7 @@ impl Stream {
     ///
     /// Waits until the device has completed all operations scheduled for this stream.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -228,7 +228,7 @@ impl Stream {
     /// complete. Synchronization is performed on the device, if possible. The
     /// event may originate from different context or device than the stream.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::quick_init;
@@ -302,7 +302,7 @@ impl Stream {
     /// Destroying a stream can return errors from previous asynchronous work. This function
     /// destroys the given stream and returns the error and the un-destroyed stream on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;

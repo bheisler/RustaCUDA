@@ -32,7 +32,7 @@
 //! functions. The programmer must ensure that no other OS threads are using the `Context` when it
 //! is dropped.
 //!
-//! # Examples:
+//! # Examples
 //!
 //! For most commmon uses (one device, one OS thread) it should suffice to create a single context:
 //!
@@ -242,7 +242,7 @@ pub struct Context {
 impl Context {
     /// Create a CUDA context for the given device.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -276,7 +276,7 @@ impl Context {
     ///
     /// This is not necessarily the latest version supported by the driver.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -306,7 +306,7 @@ impl Context {
     /// This is useful for sharing a single context between threads (though see the module-level
     /// documentation for safety details!).
     ///
-    /// # Example:
+    /// # Example
     ////*  */
     /// ```
     /// # use rustacuda::device::Device;
@@ -330,7 +330,7 @@ impl Context {
     /// Destroying a context can return errors from previous asynchronous work. This function
     /// destroys the given context and returns the error and the un-destroyed context on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -414,7 +414,7 @@ impl UnownedContext {
     ///
     /// This is not necessarily the latest version supported by the driver.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -449,7 +449,7 @@ impl ContextStack {
     /// Pop the current context off the stack and return the handle. That context may then be made
     /// current again (perhaps on a different CPU thread) by calling [push](#method.push).
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -475,7 +475,7 @@ impl ContextStack {
 
     /// Push the given context to the top of the stack
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -522,7 +522,7 @@ impl CurrentContext {
     /// where the size of the L1 cache and shared memory are fixed, this will always return
     /// `CacheConfig::PreferNone`.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -548,7 +548,7 @@ impl CurrentContext {
 
     /// Return the device ID for the current context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -573,7 +573,7 @@ impl CurrentContext {
 
     /// Return the context flags for the current context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -598,7 +598,7 @@ impl CurrentContext {
 
     /// Return resource limits for the current context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -623,7 +623,7 @@ impl CurrentContext {
 
     /// Return resource limits for the current context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -655,7 +655,7 @@ impl CurrentContext {
     /// automatically clamped to within the valid range. If the device does not support stream
     /// priorities, the returned range will contain zeroes.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -695,7 +695,7 @@ impl CurrentContext {
     /// This setting does nothing on devices where the size of the L1 cache and shared memory are
     /// fixed.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -739,7 +739,7 @@ impl CurrentContext {
     /// * `MaxL2FetchGranularity`: Controls the L2 fetch granularity. This is purely a performance
     ///    hint and it can be ignored or clamped depending on the platform.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -766,7 +766,7 @@ impl CurrentContext {
     /// On devices with configurable shared memory banks, this function will set the context's
     /// shared memory bank size which is used for subsequent kernel launches.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -787,7 +787,7 @@ impl CurrentContext {
 
     /// Returns a non-owning handle to the current context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
@@ -816,7 +816,7 @@ impl CurrentContext {
     /// If there is a context set for this thread, this replaces the top context on the stack with
     /// the given context.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::device::Device;
