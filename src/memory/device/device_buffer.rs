@@ -197,6 +197,8 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
     /// Asynchronously allocate a new buffer of the same size as `slice`, initialized
     /// with a clone of the data in `slice`.
     ///
+    /// # Safety
+    /// 
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
     /// # Errors
