@@ -376,7 +376,7 @@ impl ArrayObject {
             }
         }
 
-        let mut handle = unsafe { std::mem::uninitialized() };
+        let mut handle = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
         unsafe { cuda_sys::cuda::cuArray3DCreate_v2(&mut handle, &descriptor.desc) }.to_result()?;
         Ok(Self { handle })
     }
@@ -624,7 +624,7 @@ impl ArrayObject {
 
     /// Gets the descriptor associated with this array.
     pub fn descriptor(&self) -> CudaResult<ArrayDescriptor> {
-        let mut raw_descriptor = unsafe { std::mem::uninitialized() };
+        let mut raw_descriptor = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
         unsafe { cuda_sys::cuda::cuArray3DGetDescriptor_v2(&mut raw_descriptor, self.handle) }
             .to_result()?;
 
