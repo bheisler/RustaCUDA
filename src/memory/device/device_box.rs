@@ -23,11 +23,11 @@ impl<T: DeviceCopy> DeviceBox<T> {
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -45,13 +45,13 @@ impl<T> DeviceBox<T> {
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// Since the backing memory is not initialized, this function is not safe. The caller must
     /// ensure that the backing memory is set to a valid value before it is read, else undefined
     /// behavior may occur.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -74,13 +74,13 @@ impl<T> DeviceBox<T> {
     ///
     /// This doesn't actually allocate if `T` is zero-sized.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// The backing memory is zeroed, which may not be a valid bit-pattern for type `T`. The caller
     /// must ensure either that all-zeroes is a valid bit-pattern for type `T` or that the backing
     /// memory is set to a valid value before it is read.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -110,13 +110,13 @@ impl<T> DeviceBox<T> {
     /// of `T`. This function may accept any pointer produced by the `cuMemAllocManaged` CUDA API
     /// call.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -138,13 +138,13 @@ impl<T> DeviceBox<T> {
     /// of `T`. This function may accept any pointer produced by the `cuMemAllocManaged` CUDA API
     /// call, such as one taken from `DeviceBox::into_device`.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// This function is unsafe because improper use may lead to memory problems. For example, a
     /// double free may occur if this function is called twice on the same pointer, or a segfault
     /// may occur if the pointer is not one returned by the appropriate API call.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -167,7 +167,7 @@ impl<T> DeviceBox<T> {
     /// `DeviceBox::into_device(b)` instead of `b.into_device()` This is so that there is no conflict with
     /// a method on the inner type.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -187,7 +187,7 @@ impl<T> DeviceBox<T> {
     ///
     /// This is useful for passing the box to a kernel launch.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -205,7 +205,7 @@ impl<T> DeviceBox<T> {
     /// Deallocating device memory can return errors from previous asynchronous work. This function
     /// destroys the given box and returns the error and the un-destroyed box on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();

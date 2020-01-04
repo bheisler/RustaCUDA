@@ -14,14 +14,14 @@ pub use self::device_slice::*;
 pub trait CopyDestination<O: ?Sized>: crate::private::Sealed {
     /// Copy data from `source`. `source` must be the same size as `self`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
     fn copy_from(&mut self, source: &O) -> CudaResult<()>;
 
     /// Copy data to `dest`. `dest` must be the same size as `self`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
     fn copy_to(&self, dest: &mut O) -> CudaResult<()>;
@@ -30,7 +30,7 @@ pub trait CopyDestination<O: ?Sized>: crate::private::Sealed {
 /// Sealed trait implemented by types which can be the source or destination when copying data
 /// asynchronously to/from the device or from one device allocation to another.
 ///
-/// ## Safety:
+/// # Safety
 ///
 /// The functions of this trait are unsafe because they return control to the calling code while
 /// the copy operation could still be occurring in the background. This could allow calling code
@@ -50,9 +50,11 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     ///
     /// Host memory used as a source or destination must be page-locked.
     ///
+    /// # Safety
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
     unsafe fn async_copy_from(&mut self, source: &O, stream: &Stream) -> CudaResult<()>;
@@ -61,9 +63,11 @@ pub trait AsyncCopyDestination<O: ?Sized>: crate::private::Sealed {
     ///
     /// Host memory used as a source or destination must be page-locked.
     ///
+    /// # Safety
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If a CUDA error occurs, return the error.
     unsafe fn async_copy_to(&self, dest: &mut O, stream: &Stream) -> CudaResult<()>;

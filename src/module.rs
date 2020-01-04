@@ -21,7 +21,7 @@ impl Module {
     /// The given file should be either a cubin file, a ptx file, or a fatbin file such as
     /// those produced by `nvcc`.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;
@@ -55,7 +55,7 @@ impl Module {
     /// The given CStr must contain the bytes of a cubin file, a ptx file or a fatbin file such as
     /// those produced by `nvcc`.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;
@@ -90,7 +90,7 @@ impl Module {
     ///
     /// This function panics if the size of the symbol is not the same as the `mem::sizeof<T>()`.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -133,7 +133,7 @@ impl Module {
 
     /// Get a reference to a kernel function which can then be launched.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # use rustacuda::*;
@@ -169,7 +169,7 @@ impl Module {
     /// Destroying a module can return errors from previous asynchronous work. This function
     /// destroys the given module and returns the error and the un-destroyed module on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # use rustacuda::*;

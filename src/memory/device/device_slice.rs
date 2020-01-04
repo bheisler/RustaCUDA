@@ -169,7 +169,7 @@ impl<T> DeviceSlice<T> {
     ///
     /// Panics if `chunk_size` is 0.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -201,7 +201,7 @@ impl<T> DeviceSlice<T> {
     ///
     /// Panics if `chunk_size` is 0.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -287,11 +287,18 @@ impl<T> DeviceSlice<T> {
     /// Performs the same functionality as `from_raw_parts`, except that a
     /// mutable slice is returned.
     ///
-    /// This function is unsafe for the same reasons as `from_raw_parts`, as well
-    /// as not being able to provide a non-aliasing guarantee of the returned
+    /// # Safety
+    ///
+    /// This function is unsafe as there is no guarantee that the given pointer is valid for `len`
+    /// elements, nor whether the lifetime inferred is a suitable lifetime for the returned slice.
+    ///
+    /// This function is unsafe as there is no guarantee that the given pointer is valid for `len`
+    /// elements, not whether the lifetime inferred is a suitable lifetime for the returned slice,
+    /// as well as not being able to provide a non-aliasing guarantee of the returned
     /// mutable slice. `data` must be non-null and aligned even for zero-length
-    /// slices as with `from_raw_parts`. See the documentation of
-    /// `from_raw_parts` for more details.
+    /// slices as with `from_raw_parts`.
+    ///
+    /// See the documentation of `from_raw_parts` for more details.
     pub unsafe fn from_raw_parts_mut<'a>(
         mut data: DevicePointer<T>,
         len: usize,

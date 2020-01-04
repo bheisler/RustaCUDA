@@ -72,7 +72,7 @@
 //! export CUDA_LIBRARY_PATH="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64"
 //! ```
 //!
-//! # Examples:
+//! # Examples
 //!
 //! ## Adding two numbers on the device:
 //!

@@ -20,17 +20,17 @@ impl<T> DeviceBuffer<T> {
     /// Allocate a new device buffer large enough to hold `size` `T`'s, but without
     /// initializing the contents.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// The caller must ensure that the contents of the buffer are initialized before reading from
     /// the buffer.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -53,18 +53,18 @@ impl<T> DeviceBuffer<T> {
     /// Allocate a new device buffer large enough to hold `size` `T`'s and fill the contents with
     /// zeroes (`0u8`).
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA. If `size` is large enough that
     /// `size * mem::sizeof::<T>()` overflows usize, then returns InvalidMemoryAllocation.
     ///
-    /// # Safety:
+    /// # Safety
     ///
     /// The backing memory is zeroed, which may not be a valid bit-pattern for type `T`. The caller
     /// must ensure either that all-zeroes is a valid bit-pattern for type `T` or that the backing
     /// memory is set to a valid value before it is read.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -110,7 +110,7 @@ impl<T> DeviceBuffer<T> {
     /// that nothing else uses the pointer after calling this
     /// function.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -134,7 +134,7 @@ impl<T> DeviceBuffer<T> {
     /// Deallocating device memory can return errors from previous asynchronous work. This function
     /// destroys the given buffer and returns the error and the un-destroyed buffer on failure.
     ///
-    /// # Example:
+    /// # Example
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -174,11 +174,11 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
     /// Allocate a new device buffer of the same size as `slice`, initialized with a clone of
     /// the data in `slice`.
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
@@ -197,13 +197,15 @@ impl<T: DeviceCopy> DeviceBuffer<T> {
     /// Asynchronously allocate a new buffer of the same size as `slice`, initialized
     /// with a clone of the data in `slice`.
     ///
+    /// # Safety
+    ///
     /// For why this function is unsafe, see [AsyncCopyDestination](trait.AsyncCopyDestination.html)
     ///
-    /// # Errors:
+    /// # Errors
     ///
     /// If the allocation fails, returns the error from CUDA.
     ///
-    /// # Examples:
+    /// # Examples
     ///
     /// ```
     /// # let _context = rustacuda::quick_init().unwrap();
