@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Loosen restrictions on traits implemented by UnifiedPointer & DevicePointer
+- Fixed a bug where RustaCUDA allocated more device memory than necessary.
+- Use `MaybeUninit` internally for uninitialized data.
+
+## [0.1.1] - May 16, 2019
 ### Added
 - `Stream::add_callback` function, which adds a host-side callback into a stream's queue
 - Added basic support for allocating CUDA arrays.
@@ -19,5 +25,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Initial Release
 
 
-[Unreleased]: https://github.com/bheisler/RustaCUDA/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/bheisler/RustaCUDA/compare/0.1.1...HEAD
 [0.1.0]: https://github.com/bheisler/RustaCUDA/compare/5e6d7bd...0.1.0
+[0.1.1]: https://github.com/bheisler/RustaCUDA/compare/0.1.0...0.1.1
