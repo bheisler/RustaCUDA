@@ -16,6 +16,8 @@ matrix:
   include:
     - os: linux
     - os: linux
+      - rust: nightly
+    - os: linux
       env: DOCS=yes
     - os: linux
       env: RUSTFMT=yes

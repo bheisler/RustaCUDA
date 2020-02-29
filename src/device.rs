@@ -21,7 +21,7 @@ pub enum DeviceAttribute {
     MaxGridDimX = 5,
     /// Maximum y-dimension of a grid
     MaxGridDimY = 6,
-    /// Maximum a-dimension of a grid
+    /// Maximum z-dimension of a grid
     MaxGridDimZ = 7,
     /// Maximum amount of shared memory available to a thread block in bytes
     MaxSharedMemoryPerBlock = 8,
