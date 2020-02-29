@@ -10,3 +10,6 @@ readme = "README.md"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
+
+[dev-dependencies]
+rustacuda = { path = "..", version = "0.1.1" }
