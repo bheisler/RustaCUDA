@@ -57,7 +57,7 @@ fn impl_device_copy(input: &DeriveInput) -> TokenStream {
         }
     };
 
-    TokenStream::from(generated_code)
+    generated_code
 }
 
 fn add_bound_to_generics(generics: &Generics) -> Generics {
@@ -118,7 +118,7 @@ fn type_check_union(s: &DataUnion) -> TokenStream {
     )
 }
 
-fn check_fields(fields: &Vec<&Field>) -> Vec<TokenStream> {
+fn check_fields(fields: &[&Field]) -> Vec<TokenStream> {
     fields
         .iter()
         .map(|field| {
