@@ -1,6 +1,6 @@
 [package]
 name = "rustacuda"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
 edition = "2018"
 
@@ -17,6 +17,6 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 cuda-sys = "0.2"
-bitflags = "1.0"
+bitflags = "1.2"
 rustacuda_derive = { version = "0.1.1", path = "rustacuda_derive" }
 rustacuda_core = { version = "0.1.1", path = "rustacuda_core" }

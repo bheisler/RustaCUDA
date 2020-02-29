@@ -1,6 +1,6 @@
 [package]
 name = "rustacuda_derive"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Brook Heisler <brookheisler@gmail.com>"]
 edition = "2018"
 
@@ -13,6 +13,6 @@ license = "Apache-2.0 OR MIT"
 proc-macro = true
 
 [dependencies]
-syn = "0.15"
-quote = "0.6"
-proc-macro2 = "0.4"
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"
