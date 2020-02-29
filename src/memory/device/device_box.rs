@@ -413,4 +413,22 @@ mod test_device_box {
         z.copy_to(&mut h).unwrap();
         assert_eq!(5, h);
     }
+
+    #[test]
+    fn test_device_pointer_implements_traits_safely() {
+        let _context = crate::quick_init().unwrap();
+        let mut x = DeviceBox::new(&5u64).unwrap();
+        let mut y = DeviceBox::new(&0u64).unwrap();
+
+        // If the impls dereference the pointer, this should segfault.
+        let _ = Ord::cmp(&x.as_device_ptr(), &y.as_device_ptr());
+        let _ = PartialOrd::partial_cmp(&x.as_device_ptr(), &y.as_device_ptr());
+        let _ = PartialEq::eq(&x.as_device_ptr(), &y.as_device_ptr());
+
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&x.as_device_ptr(), &mut hasher);
+
+        let _ = format!("{:?}", x.as_device_ptr());
+        let _ = format!("{:p}", x.as_device_ptr());
+    }
 }

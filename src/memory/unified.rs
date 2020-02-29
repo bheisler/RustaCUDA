@@ -715,4 +715,22 @@ mod test_unified_buffer {
         let err = UnifiedBuffer::new(&0u64, ::std::usize::MAX - 1).unwrap_err();
         assert_eq!(CudaError::InvalidMemoryAllocation, err);
     }
+
+    #[test]
+    fn test_unified_pointer_implements_traits_safely() {
+        let _context = crate::quick_init().unwrap();
+        let mut x = UnifiedBox::new(5u64).unwrap();
+        let mut y = UnifiedBox::new(0u64).unwrap();
+
+        // If the impls dereference the pointer, this should segfault.
+        let _ = Ord::cmp(&x.as_unified_ptr(), &y.as_unified_ptr());
+        let _ = PartialOrd::partial_cmp(&x.as_unified_ptr(), &y.as_unified_ptr());
+        let _ = PartialEq::eq(&x.as_unified_ptr(), &y.as_unified_ptr());
+
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&x.as_unified_ptr(), &mut hasher);
+
+        let _ = format!("{:?}", x.as_unified_ptr());
+        let _ = format!("{:p}", x.as_unified_ptr());
+    }
 }
