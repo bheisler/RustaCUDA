@@ -293,6 +293,38 @@ impl Stream {
         .to_result()
     }
 
+    // Hidden implementation detail function. Highly unsafe. Use the `launch_cooperative!` macro instead.
+    #[doc(hidden)]
+    pub unsafe fn launch_cooperative<G, B>(
+        &self,
+        func: &Function,
+        grid_size: G,
+        block_size: B,
+        shared_mem_bytes: u32,
+        args: &[*mut c_void],
+    ) -> CudaResult<()>
+    where
+        G: Into<GridSize>,
+        B: Into<BlockSize>,
+    {
+        let grid_size: GridSize = grid_size.into();
+        let block_size: BlockSize = block_size.into();
+
+        cuda_driver_sys::cuLaunchCooperativeKernel(
+            func.to_inner(),
+            grid_size.x,
+            grid_size.y,
+            grid_size.z,
+            block_size.x,
+            block_size.y,
+            block_size.z,
+            shared_mem_bytes,
+            self.inner,
+            args.as_ptr() as *mut _,
+        )
+        .to_result()
+    }
+
     // Get the inner `CUstream` from the `Stream`.
     //
     // Necessary for certain CUDA functions outside of this
