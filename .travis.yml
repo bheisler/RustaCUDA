@@ -44,7 +44,7 @@ before_cache:
 - rm -rf ./target/debug/.fingerprint/test*
 - rm -rf ./target/debug/.fingerprint/launch*
 - rm -f  ./target/.rustc_info.json
-- rm -rf ./target/criterion
+- rm -rf ~/.cargo/registry/index/
 
 branches:
   only: master
