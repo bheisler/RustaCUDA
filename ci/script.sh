@@ -1,5 +1,7 @@
 set -ex
 
+export CARGO_INCREMENTAL=0
+
 if [ "$DOCS" = "yes" ]; then
     cargo clean
     cargo doc --all --no-deps
