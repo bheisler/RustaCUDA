@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["FunctionAttribute","All supported function attributes for Function::get_attribute"]],"struct":[["BlockSize","Dimensions of a thread block, or the number of threads in a block."],["Function","Handle to a global kernel function."],["GridSize","Dimensions of a grid, or the number of thread blocks in a kernel launch."]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["EventStatus","Status enum that represents the current status of an event."]],"struct":[["Event","An event to track work submitted to a stream."],["EventFlags","Bit flags for configuring a CUDA Event."]]});

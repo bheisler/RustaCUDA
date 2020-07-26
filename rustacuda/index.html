@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `rustacuda` crate."><meta name="keywords" content="rust, rustlang, rust-lang, rustacuda"><title>rustacuda - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../dark.css"><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="shortcut icon" href="../favicon.ico"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../rustacuda/index.html'><div class='logo-container'><img src='../rust-logo.png' alt='logo'></div></a><p class='location'>Crate rustacuda</p><div class="sidebar-elems"><a id='all-types' href='all.html'><p>See all rustacuda's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li><li><a href="#structs">Structs</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'></p><script>window.sidebarCurrent = {name: 'rustacuda', ty: 'mod', relpath: '../'};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../src/rustacuda/lib.rs.html#1-264' title='goto source code'>[src]</a></span><span class='in-band'>Crate <a class="mod" href=''>rustacuda</a></span></h1><div class='docblock'><p>This crate provides a safe, user-friendly wrapper around the CUDA Driver API.</p>
+<h1 id="cuda-terminology" class="section-header"><a href="#cuda-terminology">CUDA Terminology:</a></h1><h2 id="devices-and-hosts" class="section-header"><a href="#devices-and-hosts">Devices and Hosts:</a></h2>
+<p>This crate and its documentation uses the terms &quot;device&quot; and &quot;host&quot; frequently, so it's worth
+explaining them in more detail. A device refers to a CUDA-capable GPU or similar device and its
+associated external memory space. The host is the CPU and its associated memory space. Data
+must be transferred from host memory to device memory before the device can use it for
+computations, and the results must then be transferred back to host memory.</p>
+<h2 id="contexts-modules-streams-and-functions" class="section-header"><a href="#contexts-modules-streams-and-functions">Contexts, Modules, Streams and Functions:</a></h2>
+<p>A CUDA context is akin to a process on the host - it contains all of the state for working with
+a device, all memory allocations, etc. Each context is associated with a single device.</p>
+<p>A Module is similar to a shared-object library - it is a piece of compiled code which exports
+functions and global values. Functions can be loaded from modules and launched on a device as
+one might load a function from a shared-object file and call it. Functions are also known as
+kernels and the two terms will be used interchangeably.</p>
+<p>A Stream is akin to a thread - asynchronous work such as kernel execution can be queued into a
+stream. Work within a single stream will execute sequentially in the order that it was
+submitted, and may interleave with work from other streams.</p>
+<h2 id="grids-blocks-and-threads" class="section-header"><a href="#grids-blocks-and-threads">Grids, Blocks and Threads:</a></h2>
+<p>CUDA devices typically execute kernel functions on many threads in parallel. These threads can
+be grouped into thread blocks, which share an area of fast hardware memory known as shared
+memory. Thread blocks can be one-, two-, or three-dimensional, which is helpful when working
+with multi-dimensional data such as images. Thread blocks are then grouped into grids, which
+can also be one-, two-, or three-dimensional.</p>
+<p>CUDA devices often contain multiple separate processors. Each processor is capable of excuting
+many threads simultaneously, but they must be from the same thread block. Thus, it is important
+to ensure that the grid size is large enough to provide work for all processors. On the other
+hand, if the thread blocks are too small each processor will be under-utilized and the
+code will be unable to make effective use of shared memory.</p>
+<h1 id="usage" class="section-header"><a href="#usage">Usage:</a></h1>
+<p>Before using RustaCUDA, you must install the CUDA development libraries for your system. Version
+8.0 or newer is required. You must also have a CUDA-capable GPU installed with the appropriate
+drivers.</p>
+<p>Add the following to your <code>Cargo.toml</code>:</p>
+<pre><code class="language-text">[dependencies]
+rustacuda = &quot;0.1&quot;
+rustacuda_derive = &quot;0.1&quot;
+rustacuda_core = &quot;0.1&quot;
+</code></pre>
+<p>And this to your crate root:</p>
+<pre><code class="language-text">#[macro_use]
+extern crate rustacuda;
+
+#[macro_use]
+extern crate rustacuda_derive;
+
+extern crate rustacuda_core;
+</code></pre>
+<p>Finally, set the <code>CUDA_LIBRARY_PATH</code> environment variable to the location of your CUDA libraries.
+For example, on Windows (MINGW):</p>
+<pre><code class="language-text">export CUDA_LIBRARY_PATH=&quot;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\lib\x64&quot;
+</code></pre>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1><h2 id="adding-two-numbers-on-the-device" class="section-header"><a href="#adding-two-numbers-on-the-device">Adding two numbers on the device:</a></h2>
+<p>First, download the <code>resources/add.ptx</code> file from the RustaCUDA repository and place it in
+the resources directory for your application.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered">
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">rustacuda</span>;
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">rustacuda_core</span>;
+
+<span class="kw">use</span> <span class="ident">rustacuda</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">rustacuda</span>::<span class="ident">memory</span>::<span class="ident">DeviceBox</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">error</span>::<span class="ident">Error</span>;
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">ffi</span>::<span class="ident">CString</span>;
+
+<span class="kw">fn</span> <span class="ident">main</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="comment">// Initialize the CUDA API</span>
+    <span class="ident">rustacuda</span>::<span class="ident">init</span>(<span class="ident">CudaFlags</span>::<span class="ident">empty</span>())<span class="question-mark">?</span>;
+     
+    <span class="comment">// Get the first device</span>
+    <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">Device</span>::<span class="ident">get_device</span>(<span class="number">0</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Create a context associated to this device</span>
+    <span class="kw">let</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">Context</span>::<span class="ident">create_and_push</span>(
+        <span class="ident">ContextFlags</span>::<span class="ident">MAP_HOST</span> <span class="op">|</span> <span class="ident">ContextFlags</span>::<span class="ident">SCHED_AUTO</span>, <span class="ident">device</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Load the module containing the function we want to call</span>
+    <span class="kw">let</span> <span class="ident">module_data</span> <span class="op">=</span> <span class="ident">CString</span>::<span class="ident">new</span>(<span class="macro">include_str</span><span class="macro">!</span>(<span class="string">&quot;../resources/add.ptx&quot;</span>))<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">Module</span>::<span class="ident">load_from_string</span>(<span class="kw-2">&amp;</span><span class="ident">module_data</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Create a stream to submit work to</span>
+    <span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">Stream</span>::<span class="ident">new</span>(<span class="ident">StreamFlags</span>::<span class="ident">NON_BLOCKING</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Allocate space on the device and copy numbers to it.</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">DeviceBox</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="number">10.0f32</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">DeviceBox</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="number">20.0f32</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="ident">DeviceBox</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="number">0.0f32</span>)<span class="question-mark">?</span>;
+
+    <span class="comment">// Launching kernels is unsafe since Rust can&#39;t enforce safety - think of kernel launches</span>
+    <span class="comment">// as a foreign-function call. In this case, it is - this kernel is written in CUDA C.</span>
+    <span class="kw">unsafe</span> {
+        <span class="comment">// Launch the `sum` function with one block containing one thread on the given stream.</span>
+        <span class="macro">launch</span><span class="macro">!</span>(<span class="ident">module</span>.<span class="ident">sum</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="ident">stream</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+            <span class="ident">x</span>.<span class="ident">as_device_ptr</span>(),
+            <span class="ident">y</span>.<span class="ident">as_device_ptr</span>(),
+            <span class="ident">result</span>.<span class="ident">as_device_ptr</span>(),
+            <span class="number">1</span> <span class="comment">// Length</span>
+        ))<span class="question-mark">?</span>;
+    }
+
+    <span class="comment">// The kernel launch is asynchronous, so we wait for the kernel to finish executing</span>
+    <span class="ident">stream</span>.<span class="ident">synchronize</span>()<span class="question-mark">?</span>;
+
+    <span class="comment">// Copy the result back to the host</span>
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result_host</span> <span class="op">=</span> <span class="number">0.0f32</span>;
+    <span class="ident">result</span>.<span class="ident">copy_to</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">result_host</span>)<span class="question-mark">?</span>;
+     
+    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Sum is {}&quot;</span>, <span class="ident">result_host</span>);
+
+    <span class="prelude-val">Ok</span>(())
+}</pre></div>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="context/index.html" title='rustacuda::context mod'>context</a></td><td class='docblock-short'><p>CUDA context management</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="device/index.html" title='rustacuda::device mod'>device</a></td><td class='docblock-short'><p>Functions and types for enumerating CUDA devices and retrieving information about them.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="error/index.html" title='rustacuda::error mod'>error</a></td><td class='docblock-short'><p>Types for error handling</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="event/index.html" title='rustacuda::event mod'>event</a></td><td class='docblock-short'><p>Events can be used to track status and dependencies, as well as to measure
+the duration of work submitted to a CUDA stream.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="function/index.html" title='rustacuda::function mod'>function</a></td><td class='docblock-short'><p>Functions and types for working with CUDA kernels.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="memory/index.html" title='rustacuda::memory mod'>memory</a></td><td class='docblock-short'><p>Access to CUDA's memory allocation and transfer functions.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="module/index.html" title='rustacuda::module mod'>module</a></td><td class='docblock-short'><p>Functions and types for working with CUDA modules.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="prelude/index.html" title='rustacuda::prelude mod'>prelude</a></td><td class='docblock-short'><p>This module re-exports a number of commonly-used types for working with RustaCUDA.</p>
+</td></tr><tr class='module-item'><td><a class="mod" href="stream/index.html" title='rustacuda::stream mod'>stream</a></td><td class='docblock-short'><p>Streams of work for the device to perform.</p>
+</td></tr></table><h2 id='macros' class='section-header'><a href="#macros">Macros</a></h2>
+<table><tr class='module-item'><td><a class="macro" href="macro.launch.html" title='rustacuda::launch macro'>launch</a></td><td class='docblock-short'><p>Launch a kernel function asynchronously.</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.CudaApiVersion.html" title='rustacuda::CudaApiVersion struct'>CudaApiVersion</a></td><td class='docblock-short'><p>Struct representing the CUDA API version number.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.CudaFlags.html" title='rustacuda::CudaFlags struct'>CudaFlags</a></td><td class='docblock-short'><p>Bit flags for initializing the CUDA driver. Currently, no flags are defined,
+so <code>CudaFlags::empty()</code> is the only valid value.</p>
+</td></tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table><tr class='module-item'><td><a class="fn" href="fn.init.html" title='rustacuda::init fn'>init</a></td><td class='docblock-short'><p>Initialize the CUDA Driver API.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.quick_init.html" title='rustacuda::quick_init fn'>quick_init</a></td><td class='docblock-short'><p>Shortcut for initializing the CUDA Driver API and creating a CUDA context with default settings
+for the first device.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../";window.currentCrate = "rustacuda";</script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>

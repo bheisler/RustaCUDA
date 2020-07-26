@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ArrayFormat","Describes the format used for a CUDA Array."]],"struct":[["ArrayDescriptor","Describes a CUDA Array"],["ArrayObject","A CUDA Array. Can be bound to a texture or surface."],["ArrayObjectFlags","Flags which modify the behavior of CUDA array creation."]]});

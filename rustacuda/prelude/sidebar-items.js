@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["DeviceBuffer","Fixed-size device-side buffer. Provides basic access to device memory."],["UnifiedBuffer","Fixed-size buffer in unified memory."]],"trait":[["CopyDestination","Sealed trait implemented by types which can be the source or destination when copying data to/from the device or from one device allocation to another."]]});

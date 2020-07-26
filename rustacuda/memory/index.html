@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `memory` mod in crate `rustacuda`."><meta name="keywords" content="rust, rustlang, rust-lang, memory"><title>rustacuda::memory - Rust</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../rustacuda/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a><p class='location'>Module memory</p><div class="sidebar-elems"><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li></ul></div><p class='location'><a href='../index.html'>rustacuda</a></p><script>window.sidebarCurrent = {name: 'memory', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class='fqn'><span class='out-of-band'><span id='render-detail'><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class='inner'>&#x2212;</span>]</a></span><a class='srclink' href='../../src/rustacuda/memory/mod.rs.html#1-79' title='goto source code'>[src]</a></span><span class='in-band'>Module <a href='../index.html'>rustacuda</a>::<wbr><a class="mod" href=''>memory</a></span></h1><div class='docblock'><p>Access to CUDA's memory allocation and transfer functions.</p>
+<p>The memory module provides a safe wrapper around CUDA's memory allocation and transfer functions.
+This includes access to device memory, unified memory, and page-locked host memory.</p>
+<h1 id="device-memory" class="section-header"><a href="#device-memory">Device Memory</a></h1>
+<p>Device memory is just what it sounds like - memory allocated on the device. Device memory
+cannot be accessed from the host directly, but data can be copied to and from the device.
+RustaCUDA exposes device memory through the <a href="struct.DeviceBox.html"><code>DeviceBox</code></a> and
+<a href="struct.DeviceBuffer.html"><code>DeviceBuffer</code></a> structures. Pointers to device memory are
+represented by <a href="struct.DevicePointer.html"><code>DevicePointer</code></a>, while slices in device memory are
+represented by <a href="struct.DeviceSlice.html"><code>DeviceSlice</code></a>.</p>
+<h1 id="unified-memory" class="section-header"><a href="#unified-memory">Unified Memory</a></h1>
+<p>Unified memory is a memory allocation which can be read from and written to by both the host
+and the device. When the host (or device) attempts to access a page of unified memory, it is
+seamlessly transferred from host RAM to device RAM or vice versa. The programmer may also
+choose to explicitly prefetch data to one side or another (though this is not currently exposed
+through RustaCUDA). RustaCUDA exposes unified memory through the
+<a href="struct.UnifiedBox.html"><code>UnifiedBox</code></a> and <a href="struct.UnifiedBuffer.html"><code>UnifiedBuffer</code></a>
+structures, and pointers to unified memory are represented by
+<a href="struct.UnifiedPointer.html"><code>UnifiedPointer</code></a>. Since unified memory is accessible to the host,
+slices in unified memory are represented by normal Rust slices.</p>
+<p>Unified memory is generally easier to use than device memory, but there are drawbacks. It is
+possible to allocate more memory than is available on the card, and this can result in very slow
+paging behavior. Additionally, it can require careful use of prefetching to achieve optimum
+performance. Finally, unified memory is not supported on some older systems.</p>
+<h1 id="page-locked-host-memory" class="section-header"><a href="#page-locked-host-memory">Page-locked Host Memory</a></h1>
+<p>Page-locked memory is memory that the operating system has locked into physical RAM, and will
+not page out to disk. When copying data from the process' memory space to the device, the CUDA
+driver needs to first copy the data to a page-locked region of host memory, then initiate a DMA
+transfer to copy the data to the device itself. Likewise, when transferring from device to host,
+the driver copies the data into page-locked host memory then into the normal memory space. This
+extra copy can be eliminated if the data is loaded or generated directly into page-locked
+memory. RustaCUDA exposes page-locked memory through the
+<a href="struct.LockedBuffer.html"><code>LockedBuffer</code></a> struct.</p>
+<p>For example, if the programmer needs to read an array of bytes from disk and transfer it to the
+device, it would be best to create a <code>LockedBuffer</code>, load the bytes directly into the
+<code>LockedBuffer</code>, and then copy them to a <code>DeviceBuffer</code>. If the bytes are in a <code>Vec&lt;u8&gt;</code>, there
+would be no advantage to using a <code>LockedBuffer</code>.</p>
+<p>However, since the OS cannot page out page-locked memory, excessive use can slow down the entire
+system (including other processes) as physical RAM is tied up.  Therefore, page-locked memory
+should be used sparingly.</p>
+<h1 id="ffi-information" class="section-header"><a href="#ffi-information">FFI Information</a></h1>
+<p>The internal representations of <code>DevicePointer&lt;T&gt;</code> and <code>UnifiedPointer&lt;T&gt;</code> are guaranteed to be
+the same as <code>*mut T</code> and they can be safely passed through an FFI boundary to code expecting
+raw pointers (though keep in mind that device-only pointers cannot be dereferenced on the CPU).
+This is important when launching kernels written in C.</p>
+<p>As with regular Rust, all other types (eg. <code>DeviceBuffer</code> or <code>UnifiedBox</code>) are not FFI-safe.
+Their internal representations are not guaranteed to be anything in particular, and are not
+guaranteed to be the same in different versions of RustaCUDA. If you need to pass them through
+an FFI boundary, you must convert them to FFI-safe primitives yourself. For example, with
+<code>UnifiedBuffer</code>, use the <code>as_unified_ptr()</code> and <code>len()</code> functions to get the primitives, and
+<code>mem::forget()</code> the Buffer so that it isn't dropped. Again, as with regular Rust, the caller is
+responsible for reconstructing the <code>UnifiedBuffer</code> using <code>from_raw_parts()</code> and dropping it to
+ensure that the memory allocation is safely cleaned up.</p>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table><tr class='module-item'><td><a class="mod" href="array/index.html" title='rustacuda::memory::array mod'>array</a></td><td class='docblock-short'><p>Routines for allocating and using CUDA Array Objects.</p>
+</td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table><tr class='module-item'><td><a class="struct" href="struct.DeviceBox.html" title='rustacuda::memory::DeviceBox struct'>DeviceBox</a></td><td class='docblock-short'><p>A pointer type for heap-allocation in CUDA device memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.DeviceBuffer.html" title='rustacuda::memory::DeviceBuffer struct'>DeviceBuffer</a></td><td class='docblock-short'><p>Fixed-size device-side buffer. Provides basic access to device memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.DeviceChunks.html" title='rustacuda::memory::DeviceChunks struct'>DeviceChunks</a></td><td class='docblock-short'><p>An iterator over a <a href="struct.DeviceSlice.html"><code>DeviceSlice</code></a> in (non-overlapping) chunks
+(<code>chunk_size</code> elements at a time).</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.DeviceChunksMut.html" title='rustacuda::memory::DeviceChunksMut struct'>DeviceChunksMut</a></td><td class='docblock-short'><p>An iterator over a <a href="struct.DeviceSlice.html"><code>DeviceSlice</code></a> in (non-overlapping) mutable chunks
+(<code>chunk_size</code> elements at a time).</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.DevicePointer.html" title='rustacuda::memory::DevicePointer struct'>DevicePointer</a></td><td class='docblock-short'><p>A pointer to device memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.DeviceSlice.html" title='rustacuda::memory::DeviceSlice struct'>DeviceSlice</a></td><td class='docblock-short'><p>Fixed-size device-side slice.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.LockedBuffer.html" title='rustacuda::memory::LockedBuffer struct'>LockedBuffer</a></td><td class='docblock-short'><p>Fixed-size host-side buffer in page-locked memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.UnifiedBox.html" title='rustacuda::memory::UnifiedBox struct'>UnifiedBox</a></td><td class='docblock-short'><p>A pointer type for heap-allocation in CUDA unified memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.UnifiedBuffer.html" title='rustacuda::memory::UnifiedBuffer struct'>UnifiedBuffer</a></td><td class='docblock-short'><p>Fixed-size buffer in unified memory.</p>
+</td></tr><tr class='module-item'><td><a class="struct" href="struct.UnifiedPointer.html" title='rustacuda::memory::UnifiedPointer struct'>UnifiedPointer</a></td><td class='docblock-short'><p>A pointer to unified memory.</p>
+</td></tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table><tr class='module-item'><td><a class="trait" href="trait.AsyncCopyDestination.html" title='rustacuda::memory::AsyncCopyDestination trait'>AsyncCopyDestination</a></td><td class='docblock-short'><p>Sealed trait implemented by types which can be the source or destination when copying data
+asynchronously to/from the device or from one device allocation to another.</p>
+</td></tr><tr class='module-item'><td><a class="trait" href="trait.CopyDestination.html" title='rustacuda::memory::CopyDestination trait'>CopyDestination</a></td><td class='docblock-short'><p>Sealed trait implemented by types which can be the source or destination when copying data
+to/from the device or from one device allocation to another.</p>
+</td></tr><tr class='module-item'><td><a class="trait" href="trait.DeviceCopy.html" title='rustacuda::memory::DeviceCopy trait'>DeviceCopy</a></td><td class='docblock-short'><p>Marker trait for types which can safely be copied to or from a CUDA device.</p>
+</td></tr></table><h2 id='functions' class='section-header'><a href="#functions">Functions</a></h2>
+<table><tr class='module-item'><td><a class="fn" href="fn.cuda_free.html" title='rustacuda::memory::cuda_free fn'>cuda_free</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Free memory allocated with <a href="fn.cuda_malloc.html"><code>cuda_malloc</code></a>.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.cuda_free_locked.html" title='rustacuda::memory::cuda_free_locked fn'>cuda_free_locked</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Free page-locked memory allocated with <a href="fn.cuda_malloc_host.html"><code>cuda_malloc_host</code></a>.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.cuda_free_unified.html" title='rustacuda::memory::cuda_free_unified fn'>cuda_free_unified</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Free memory allocated with <a href="fn.cuda_malloc_unified.html"><code>cuda_malloc_unified</code></a>.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.cuda_malloc.html" title='rustacuda::memory::cuda_malloc fn'>cuda_malloc</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Unsafe wrapper around the <code>cuMemAlloc</code> function, which allocates some device memory and
+returns a <a href="struct.DevicePointer.html"><code>DevicePointer</code></a> pointing to it. The memory is not cleared.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.cuda_malloc_locked.html" title='rustacuda::memory::cuda_malloc_locked fn'>cuda_malloc_locked</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Unsafe wrapper around the <code>cuMemAllocHost</code> function, which allocates some page-locked host memory
+and returns a raw pointer pointing to it. The memory is not cleared.</p>
+</td></tr><tr class='module-item'><td><a class="fn" href="fn.cuda_malloc_unified.html" title='rustacuda::memory::cuda_malloc_unified fn'>cuda_malloc_unified</a><a title='unsafe function' href='#'><sup>⚠</sup></a></td><td class='docblock-short'><p>Unsafe wrapper around the <code>cuMemAllocManaged</code> function, which allocates some unified memory and
+returns a <a href="struct.UnifiedPointer.html"><code>UnifiedPointer</code></a> pointing to it. The memory is not cleared.</p>
+</td></tr></table></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "rustacuda";</script><script src="../../main.js"></script><script defer src="../../search-index.js"></script></body></html>
