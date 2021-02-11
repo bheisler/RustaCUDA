@@ -177,7 +177,7 @@ Sum is 30.0
 Thanks for your interest! Contributions are welcome.
 
 Issues, feature requests, questions and bug reports should be reported via the issue tracker above.
-In particular, becuase RustaCUDA aims to be well-documented, please report anything you find
+In particular, because RustaCUDA aims to be well-documented, please report anything you find
 confusing or incorrect in the documentation.
 
 Code or documentation improvements in the form of pull requests are also welcome. Please file or
