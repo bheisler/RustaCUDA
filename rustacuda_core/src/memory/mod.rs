@@ -87,20 +87,8 @@ unsafe impl<L: DeviceCopy, R: DeviceCopy> DeviceCopy for Result<L, R> {}
 unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for PhantomData<T> {}
 unsafe impl<T: DeviceCopy> DeviceCopy for Wrapping<T> {}
 
-macro_rules! impl_device_copy_array {
-    ($($n:expr)*) => {
-        $(
-            unsafe impl<T: DeviceCopy> DeviceCopy for [T;$ n] {}
-        )*
-    }
-}
+unsafe impl<T: DeviceCopy, const N: usize> DeviceCopy for [T; N] {}
 
-impl_device_copy_array! {
-    1 2 3 4 5 6 7 8 9 10
-    11 12 13 14 15 16 17 18 19 20
-    21 22 23 24 25 26 27 28 29 30
-    31 32
-}
 unsafe impl DeviceCopy for () {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy> DeviceCopy for (A, B) {}
 unsafe impl<A: DeviceCopy, B: DeviceCopy, C: DeviceCopy> DeviceCopy for (A, B, C) {}
