@@ -1,7 +1,7 @@
 //! Functions and types for enumerating CUDA devices and retrieving information about them.
 
 use crate::error::{CudaResult, ToResult};
-use cuda_sys::cuda::*;
+use cuda_driver_sys::*;
 use std::ffi::CStr;
 use std::ops::Range;
 
