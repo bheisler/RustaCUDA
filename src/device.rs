@@ -328,6 +328,29 @@ impl Device {
         }
     }
 
+    /// Returns the UUID of this device.
+    ///
+    /// # Example
+    /// ```
+    /// # use rustacuda::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # init(CudaFlags::empty())?;
+    /// use rustacuda::device::Device;
+    /// let device = Device::get_device(0)?;
+    /// println!("Device UUID: {}", device.uuid()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn uuid(self) -> CudaResult<[u8; 16]> {
+        unsafe {
+            let mut cu_uuid = CUuuid { bytes: [0i8; 16] };
+            cuDeviceGetUuid(&mut cu_uuid, self.device).to_result()?;
+            let uuid: [u8; 16] = ::std::mem::transmute(cu_uuid.bytes);
+            Ok(uuid)
+        }
+    }
+
     /// Returns information about this device.
     ///
     /// # Example
