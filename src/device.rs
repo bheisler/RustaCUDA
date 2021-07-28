@@ -367,7 +367,7 @@ impl Device {
     /// # init(CudaFlags::empty())?;
     /// use rustacuda::device::Device;
     /// let device = Device::get_device(0)?;
-    /// println!("Device UUID: {}", device.uuid()?);
+    /// println!("Device UUID: {:?}", device.uuid()?);
     /// # Ok(())
     /// # }
     /// ```
@@ -480,5 +480,13 @@ mod test {
             DeviceAttribute::__NonExhaustive as u32,
             CUdevice_attribute_enum::CU_DEVICE_ATTRIBUTE_MAX as u32
         );
+    }
+
+    #[test]
+    fn test_uuid() -> Result<(), Box<dyn Error>> {
+        test_init()?;
+        let uuid = Device::get_device(0)?.uuid()?;
+        println!("{:?}", uuid);
+        Ok(())
     }
 }
