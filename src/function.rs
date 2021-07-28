@@ -393,7 +393,7 @@ macro_rules! launch {
     };
     ($function:ident <<<$grid:expr, $block:expr, $shared:expr, $stream:ident>>>( $( $arg:expr),* )) => {
         {
-            fn assert_impl_devicecopy<T: $crate::memory::DeviceCopy>(_val: T) {};
+            fn assert_impl_devicecopy<T: $crate::memory::DeviceCopy>(_val: T) {}
             if false {
                 $(
                     assert_impl_devicecopy($arg);
