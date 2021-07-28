@@ -192,8 +192,37 @@ pub enum DeviceAttribute {
     ComputePreemptionSupported = 90,
     /// Device can access host registered memory at the same virtual address as the CPU
     CanUseHostPointerForRegisteredMem = 91,
+    /// Stream memory operations are supported.
+    CanUseStreamMemOps = 92,
+    /// 64-bit stream memory operations are supported.
+    CanUse64BitStreamMemOps = 93,
+    /// Wait value NOR is supported
+    CanUseStreamWaitValueNor = 94,
+    /// Supports launching cooperative kernels
+    CooperativeLaunch = 95,
+    /// Supports launching cooperative kernels on multiple devices.
+    CooperativeMultiDeviceLaunch = 96,
+    /// Maximum opt-in shared memory per block.
+    MaxSharedMemoryPerBlockOptin = 97,
+    /// Stream memory operations can wait for flush.
+    CanFlushRemoteWrites = 98,
+    /// Device supports host memory registration
+    HostRegisterSupported = 99,
+    /// Device accesses pageable memory via the host page tables
+    PageableMemoryAccessUsesHostPageTable = 100,
+    /// Device supports direct access to device memory without migration
+    DirectManagedMemAccessFromhost = 101,
+    /// Device supports virual memory management APIs
+    VirtualMemoryManagementSupported = 102,
+    /// Device supports exporting memory to a posix file descriptor
+    HandleTypePosixFileDescriptorSupported = 103,
+    /// Device supports exporting memory to a Win32 NT handle
+    HandleTypeWin32HandleSupported = 104,
+    /// Device supports exporting memory to a Win32 KMT handle
+    HandleTypeWin32KmtHandleSupported = 105,
+
     #[doc(hidden)]
-    __NonExhaustive = 92,
+    __NonExhaustive = 106,
 }
 
 /// Opaque handle to a CUDA device.
