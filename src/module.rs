@@ -3,7 +3,6 @@
 use crate::error::{CudaResult, DropResult, ToResult};
 use crate::function::Function;
 use crate::memory::{CopyDestination, DeviceCopy, DevicePointer};
-use cuda_sys::cuda;
 use std::ffi::{c_void, CStr};
 use std::fmt;
 use std::marker::PhantomData;
@@ -13,7 +12,7 @@ use std::ptr;
 /// A compiled CUDA module, loaded into a context.
 #[derive(Debug)]
 pub struct Module {
-    inner: cuda::CUmodule,
+    inner: cuda_driver_sys::CUmodule,
 }
 impl Module {
     /// Load a module from the given file name into the current context.
@@ -41,8 +40,11 @@ impl Module {
             let mut module = Module {
                 inner: ptr::null_mut(),
             };
-            cuda::cuModuleLoad(&mut module.inner as *mut cuda::CUmodule, filename.as_ptr())
-                .to_result()?;
+            cuda_driver_sys::cuModuleLoad(
+                &mut module.inner as *mut cuda_driver_sys::CUmodule,
+                filename.as_ptr(),
+            )
+            .to_result()?;
             Ok(module)
         }
     }
@@ -75,8 +77,8 @@ impl Module {
             let mut module = Module {
                 inner: ptr::null_mut(),
             };
-            cuda::cuModuleLoadData(
-                &mut module.inner as *mut cuda::CUmodule,
+            cuda_driver_sys::cuModuleLoadData(
+                &mut module.inner as *mut cuda_driver_sys::CUmodule,
                 image.as_ptr() as *const c_void,
             )
             .to_result()?;
@@ -116,8 +118,8 @@ impl Module {
             let mut ptr: DevicePointer<T> = DevicePointer::null();
             let mut size: usize = 0;
 
-            cuda::cuModuleGetGlobal_v2(
-                &mut ptr as *mut DevicePointer<T> as *mut cuda::CUdeviceptr,
+            cuda_driver_sys::cuModuleGetGlobal_v2(
+                &mut ptr as *mut DevicePointer<T> as *mut cuda_driver_sys::CUdeviceptr,
                 &mut size as *mut usize,
                 self.inner,
                 name.as_ptr(),
@@ -152,10 +154,10 @@ impl Module {
     /// ```
     pub fn get_function<'a>(&'a self, name: &CStr) -> CudaResult<Function<'a>> {
         unsafe {
-            let mut func: cuda::CUfunction = ptr::null_mut();
+            let mut func: cuda_driver_sys::CUfunction = ptr::null_mut();
 
-            cuda::cuModuleGetFunction(
-                &mut func as *mut cuda::CUfunction,
+            cuda_driver_sys::cuModuleGetFunction(
+                &mut func as *mut cuda_driver_sys::CUfunction,
                 self.inner,
                 name.as_ptr(),
             )
@@ -198,7 +200,7 @@ impl Module {
 
         unsafe {
             let inner = mem::replace(&mut module.inner, ptr::null_mut());
-            match cuda::cuModuleUnload(inner).to_result() {
+            match cuda_driver_sys::cuModuleUnload(inner).to_result() {
                 Ok(()) => {
                     mem::forget(module);
                     Ok(())
@@ -216,7 +218,7 @@ impl Drop for Module {
         unsafe {
             // No choice but to panic if this fails...
             let module = mem::replace(&mut self.inner, ptr::null_mut());
-            cuda::cuModuleUnload(module)
+            cuda_driver_sys::cuModuleUnload(module)
                 .to_result()
                 .expect("Failed to unload CUDA module");
         }
@@ -240,7 +242,7 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyHtoD_v2(
+                cuda_driver_sys::cuMemcpyHtoD_v2(
                     self.ptr.as_raw_mut() as u64,
                     val as *const T as *const c_void,
                     size,
@@ -255,7 +257,7 @@ impl<'a, T: DeviceCopy> CopyDestination<T> for Symbol<'a, T> {
         let size = mem::size_of::<T>();
         if size != 0 {
             unsafe {
-                cuda::cuMemcpyDtoH_v2(
+                cuda_driver_sys::cuMemcpyDtoH_v2(
                     val as *const T as *mut c_void,
                     self.ptr.as_raw() as u64,
                     size,

@@ -2,7 +2,6 @@ use super::DeviceCopy;
 use crate::error::*;
 use crate::memory::DevicePointer;
 use crate::memory::UnifiedPointer;
-use cuda_sys::cuda;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
@@ -45,7 +44,7 @@ pub unsafe fn cuda_malloc<T>(count: usize) -> CudaResult<DevicePointer<T>> {
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cuda::cuMemAlloc_v2(&mut ptr as *mut *mut c_void as *mut u64, size).to_result()?;
+    cuda_driver_sys::cuMemAlloc_v2(&mut ptr as *mut *mut c_void as *mut u64, size).to_result()?;
     let ptr = ptr as *mut T;
     Ok(DevicePointer::wrap(ptr as *mut T))
 }
@@ -90,10 +89,10 @@ pub unsafe fn cuda_malloc_unified<T: DeviceCopy>(count: usize) -> CudaResult<Uni
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cuda::cuMemAllocManaged(
+    cuda_driver_sys::cuMemAllocManaged(
         &mut ptr as *mut *mut c_void as *mut u64,
         size,
-        cuda::CUmemAttach_flags_enum::CU_MEM_ATTACH_GLOBAL as u32,
+        cuda_driver_sys::CUmemAttach_flags_enum::CU_MEM_ATTACH_GLOBAL as u32,
     )
     .to_result()?;
     let ptr = ptr as *mut T;
@@ -129,7 +128,7 @@ pub unsafe fn cuda_free<T>(mut p: DevicePointer<T>) -> CudaResult<()> {
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFree_v2(ptr as u64).to_result()?;
+    cuda_driver_sys::cuMemFree_v2(ptr as u64).to_result()?;
     Ok(())
 }
 
@@ -162,7 +161,7 @@ pub unsafe fn cuda_free_unified<T: DeviceCopy>(mut p: UnifiedPointer<T>) -> Cuda
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFree_v2(ptr as u64).to_result()?;
+    cuda_driver_sys::cuMemFree_v2(ptr as u64).to_result()?;
     Ok(())
 }
 
@@ -204,7 +203,7 @@ pub unsafe fn cuda_malloc_locked<T>(count: usize) -> CudaResult<*mut T> {
     }
 
     let mut ptr: *mut c_void = ptr::null_mut();
-    cuda::cuMemAllocHost_v2(&mut ptr as *mut *mut c_void, size).to_result()?;
+    cuda_driver_sys::cuMemAllocHost_v2(&mut ptr as *mut *mut c_void, size).to_result()?;
     let ptr = ptr as *mut T;
     Ok(ptr as *mut T)
 }
@@ -237,7 +236,7 @@ pub unsafe fn cuda_free_locked<T>(ptr: *mut T) -> CudaResult<()> {
         return Err(CudaError::InvalidMemoryAllocation);
     }
 
-    cuda::cuMemFreeHost(ptr as *mut c_void).to_result()?;
+    cuda_driver_sys::cuMemFreeHost(ptr as *mut c_void).to_result()?;
     Ok(())
 }
 

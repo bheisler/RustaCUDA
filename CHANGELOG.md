@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `Device::uuid` function, which returns the UUID of a device.
+
+### Fixed
+- Upgraded `cuda-sys` 0.2 to `cuda-driver-sys` 0.3.
 
 ## [0.1.2] - February 29, 2019
 ### Fixed

@@ -1,7 +1,7 @@
 //! Functions and types for enumerating CUDA devices and retrieving information about them.
 
 use crate::error::{CudaResult, ToResult};
-use cuda_sys::cuda::*;
+use cuda_driver_sys::*;
 use std::ffi::CStr;
 use std::ops::Range;
 
@@ -192,8 +192,37 @@ pub enum DeviceAttribute {
     ComputePreemptionSupported = 90,
     /// Device can access host registered memory at the same virtual address as the CPU
     CanUseHostPointerForRegisteredMem = 91,
+    /// Stream memory operations are supported.
+    CanUseStreamMemOps = 92,
+    /// 64-bit stream memory operations are supported.
+    CanUse64BitStreamMemOps = 93,
+    /// Wait value NOR is supported
+    CanUseStreamWaitValueNor = 94,
+    /// Supports launching cooperative kernels
+    CooperativeLaunch = 95,
+    /// Supports launching cooperative kernels on multiple devices.
+    CooperativeMultiDeviceLaunch = 96,
+    /// Maximum opt-in shared memory per block.
+    MaxSharedMemoryPerBlockOptin = 97,
+    /// Stream memory operations can wait for flush.
+    CanFlushRemoteWrites = 98,
+    /// Device supports host memory registration
+    HostRegisterSupported = 99,
+    /// Device accesses pageable memory via the host page tables
+    PageableMemoryAccessUsesHostPageTable = 100,
+    /// Device supports direct access to device memory without migration
+    DirectManagedMemAccessFromhost = 101,
+    /// Device supports virual memory management APIs
+    VirtualMemoryManagementSupported = 102,
+    /// Device supports exporting memory to a posix file descriptor
+    HandleTypePosixFileDescriptorSupported = 103,
+    /// Device supports exporting memory to a Win32 NT handle
+    HandleTypeWin32HandleSupported = 104,
+    /// Device supports exporting memory to a Win32 KMT handle
+    HandleTypeWin32KmtHandleSupported = 105,
+
     #[doc(hidden)]
-    __NonExhaustive = 92,
+    __NonExhaustive = 106,
 }
 
 /// Opaque handle to a CUDA device.
@@ -328,6 +357,29 @@ impl Device {
         }
     }
 
+    /// Returns the UUID of this device.
+    ///
+    /// # Example
+    /// ```
+    /// # use rustacuda::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # init(CudaFlags::empty())?;
+    /// use rustacuda::device::Device;
+    /// let device = Device::get_device(0)?;
+    /// println!("Device UUID: {:?}", device.uuid()?);
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn uuid(self) -> CudaResult<[u8; 16]> {
+        unsafe {
+            let mut cu_uuid = CUuuid { bytes: [0i8; 16] };
+            cuDeviceGetUuid(&mut cu_uuid, self.device).to_result()?;
+            let uuid: [u8; 16] = ::std::mem::transmute(cu_uuid.bytes);
+            Ok(uuid)
+        }
+    }
+
     /// Returns information about this device.
     ///
     /// # Example
@@ -428,5 +480,13 @@ mod test {
             DeviceAttribute::__NonExhaustive as u32,
             CUdevice_attribute_enum::CU_DEVICE_ATTRIBUTE_MAX as u32
         );
+    }
+
+    #[test]
+    fn test_uuid() -> Result<(), Box<dyn Error>> {
+        test_init()?;
+        let uuid = Device::get_device(0)?.uuid()?;
+        println!("{:?}", uuid);
+        Ok(())
     }
 }
