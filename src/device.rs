@@ -4,6 +4,7 @@ use crate::error::{CudaResult, ToResult};
 use cuda_driver_sys::*;
 use std::ffi::CStr;
 use std::ops::Range;
+use std::os::raw::c_char;
 
 /// All supported device attributes for [Device::get_attribute](struct.Device.html#method.get_attribute)
 #[repr(u32)]
@@ -373,7 +374,7 @@ impl Device {
     /// ```
     pub fn uuid(self) -> CudaResult<[u8; 16]> {
         unsafe {
-            let mut cu_uuid = CUuuid { bytes: [0i8; 16] };
+            let mut cu_uuid = CUuuid { bytes: [0 as c_char; 16] };
             cuDeviceGetUuid(&mut cu_uuid, self.device).to_result()?;
             let uuid: [u8; 16] = ::std::mem::transmute(cu_uuid.bytes);
             Ok(uuid)
