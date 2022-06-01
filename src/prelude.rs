@@ -5,6 +5,7 @@
 
 pub use crate::context::{Context, ContextFlags};
 pub use crate::device::Device;
+#[doc(no_inline)]
 pub use crate::memory::{CopyDestination, DeviceBuffer, UnifiedBuffer};
 pub use crate::module::Module;
 pub use crate::stream::{Stream, StreamFlags};
