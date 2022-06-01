@@ -149,8 +149,15 @@ pub enum FunctionAttribute {
     /// option "-Xptxas --dlcm=ca" set.
     CacheModeCa = 7,
 
+    /// The maximum size of dynamically allocated shared memory in bytes.
+    MaxDynamicSharedSizeBytes = 8,
+
+    /// The percentage of cache resources used for shared memory on architectures on
+    /// which the L1 cache and shared memory are unified.
+    PreferredSharedMemoryCarveout = 9,
+
     #[doc(hidden)]
-    __Nonexhaustive = 8,
+    __Nonexhaustive = 10,
 }
 
 /// Handle to a global kernel function.
@@ -199,6 +206,20 @@ impl<'a> Function<'a> {
             )
             .to_result()?;
             Ok(val)
+        }
+    }
+
+    /// Sets function attributes.
+    fn set_attribute(&mut self, attr: FunctionAttribute, value: i32) -> CudaResult<()> {
+        unsafe {
+            cuda_driver_sys::cuFuncSetAttribute(
+                self.inner,
+                // This should be safe, as the repr and values of FunctionAttribute should match.
+                ::std::mem::transmute(attr),
+                value,
+            )
+            .to_result()?;
+            Ok(())
         }
     }
 
@@ -261,6 +282,61 @@ impl<'a> Function<'a> {
     /// ```
     pub fn set_shared_memory_config(&mut self, cfg: SharedMemoryConfig) -> CudaResult<()> {
         unsafe { cuda_driver_sys::cuFuncSetSharedMemConfig(self.inner, transmute(cfg)).to_result() }
+    }
+
+    /// Sets the maximum amount of dynamically allocated shared memory in bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
+    /// # use rustacuda::module::Module;
+    /// # use std::ffi::CString;
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
+    /// let mut function = module.get_function(&name)?;
+    /// function.set_max_dynamic_shared_size_bytes(32768)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_max_dynamic_shared_size_bytes(&mut self, max_bytes: u32) -> CudaResult<()> {
+        self.set_attribute(
+            FunctionAttribute::MaxDynamicSharedSizeBytes,
+            max_bytes as i32,
+        )
+    }
+
+    /// Sets the percentage of cache resources used for shared memory.
+    ///
+    /// On devices on which the L1 cache and shared memory are unified, this function
+    /// sets the percentage of cache resources that will be used for shared memory. The remaining
+    /// cache resources will used for the L1 cache. The setting is a preference that
+    /// can be ignored by the driver.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use rustacuda::*;
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// # let _ctx = quick_init()?;
+    /// # use rustacuda::module::Module;
+    /// # use std::ffi::CString;
+    /// # let ptx = CString::new(include_str!("../resources/add.ptx"))?;
+    /// # let module = Module::load_from_string(&ptx)?;
+    /// # let name = CString::new("sum")?;
+    /// let mut function = module.get_function(&name)?;
+    /// function.set_preferred_shared_memory_carveout(50)?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn set_preferred_shared_memory_carveout(&mut self, percent: u8) -> CudaResult<()> {
+        let percent_i32: i32 = percent.into();
+        self.set_attribute(FunctionAttribute::MaxDynamicSharedSizeBytes, percent_i32)
     }
 
     pub(crate) fn to_inner(&self) -> CUfunction {
