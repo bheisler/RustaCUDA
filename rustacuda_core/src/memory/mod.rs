@@ -1,6 +1,7 @@
 mod pointer;
 pub use self::pointer::*;
 
+use core::cell::UnsafeCell;
 use core::marker::PhantomData;
 use core::num::*;
 
@@ -84,8 +85,9 @@ impl_device_copy!(
 );
 unsafe impl<T: DeviceCopy> DeviceCopy for Option<T> {}
 unsafe impl<L: DeviceCopy, R: DeviceCopy> DeviceCopy for Result<L, R> {}
-unsafe impl<T: ?Sized + DeviceCopy> DeviceCopy for PhantomData<T> {}
+unsafe impl<T: ?Sized> DeviceCopy for PhantomData<T> {}
 unsafe impl<T: DeviceCopy> DeviceCopy for Wrapping<T> {}
+unsafe impl<T: DeviceCopy + ?Sized> DeviceCopy for UnsafeCell<T> {}
 
 macro_rules! impl_device_copy_array {
     ($($n:expr)*) => {
